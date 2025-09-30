@@ -3,6 +3,7 @@ import time
 import numpy as np
 import gymnasium as gym
 from robobopy.Robobo import Robobo
+from robobosim.RoboboSim import RoboboSim
 import math
 
 # https://gymnasium.farama.org/introduction/create_custom_env/
@@ -14,12 +15,14 @@ class Entorno(gym.Env):
 
         self.robocop = Robobo("localhost")
         self.robocop.connect()
+        self.sim = RoboboSim("localhost")
+        self.sim.connect()
         self.velocidad_min = -100 # se hara clip con estos valores
         self.velocidad_max = 100
 
 
         # inicializacion de las variables 
-        self._robobo_xy = np.array([-1, -1], dtype=np.int32)
+        self._blob_xy = np.array([-1, -1], dtype=np.int32)
         self._tamano_blob = np.array([-1], dtype=np.int32)
         self._velocidad = np.array([0, 0], dtype=np.float32)      
         #self._distancia_a_blob = np.array([-1.], dtype=np.float32)
@@ -30,7 +33,7 @@ class Entorno(gym.Env):
         # por un lado el xy que va de -1 a 101 y luego el tamano_blob
         self.observation_space = gym.spaces.Dict(
             {
-                "robobo_xy": gym.spaces.Box(-1, 102, shape=(2,), dtype=int),
+                "blob_xy": gym.spaces.Box(-1, 102, shape=(2,), dtype=int),
                 # ...size (int): The area of the blob measured in pixels.
                 # es lo que pone en la documentacion de robobo sobre el tamano_blob
                 "tamano_blob": gym.spaces.Box(0, tamano_blob_max, shape=(1,), dtype=int),
@@ -52,9 +55,9 @@ class Entorno(gym.Env):
         Devuelve:
             dict: posicion de robobo y tamano del blob
         """
-        #return {"robobo_xy": self._robobo_xy, "tamano_blob": self._tamano_blob, "distancia_a_blob": self._distancia_a_blob}
-        print(self._robobo_xy, self._tamano_blob, self._velocidad)
-        return {"robobo_xy": self._robobo_xy, 
+        #return {"blob_xy": self._blob_xy, "tamano_blob": self._tamano_blob, "distancia_a_blob": self._distancia_a_blob}
+        print(f'xy: {self._blob_xy}, tamano_blob: {self._tamano_blob}, velocidad {self._velocidad}')
+        return {"blob_xy": self._blob_xy, 
                 "tamano_blob": self._tamano_blob, 
                 "velocidad": self._velocidad}
 
@@ -104,7 +107,7 @@ class Entorno(gym.Env):
         super().reset(seed=seed)
 
         # los metodos hablan con robocop y lo meten en las variables
-        self._robobo_xy = self._get_xy()
+        self._blob_xy = self._get_xy()
         self._tamano_blob = self._get_tamano_blob()
         #self._distancia_a_blob = self._get_distancia_a_blob()
 
@@ -118,15 +121,29 @@ class Entorno(gym.Env):
         """
         Método auxiliar para devolver la recompensa a partir de los atributos de la clase
         """
-        x = self._robobo_xy[0]
-        #d = self._distancia_a_blob[0]
-        alpha1 = 0.5
-        #alpha2 = 0.5
-        
-        # OJO estoy usando el 50 pero si luego lo cambiamos a [0,1] habra que usar 0.5
+        def _distancia_a_blob():
+            x_obj, y_obj = 0, 0
+            posicion_robobo = self.sim.getRobotLocation(0)['position']
+            x_rob, y_rob = posicion_robobo['x'], posicion_robobo['y']
 
-        #return alpha1 * math.exp(-(x-50)**2) + alpha2 * math.exp(-(d)**2)
-        return alpha1 * math.exp(-(x-50)**2)
+            objetos = self.sim.getObjects()
+            if objetos != None and len(objetos) > 0:
+                for objeto in objetos:
+                    posicion = self.sim.getObjectLocation(objeto)['position']
+                    x_obj, y_obj = posicion['x'], posicion['y']
+
+            return math.sqrt((x_obj - x_rob)**2 + (y_obj - y_rob)**2)
+
+
+        x = self._blob_xy[0]
+        d = _distancia_a_blob()
+        print(f'descentre: {x-50}, distancia_a_blob: {d}')
+        alpha1 = 0.5
+        alpha2 = 0.5
+        sigma = 50
+        # OJO estoy usando el 50 pero si luego lo cambiamos a [0,1] habra que usar 0.5
+        if x: return alpha1 * math.exp(-(x-50)**2) + alpha2 * math.exp(-(d/sigma)**2)
+        else: return math.exp(-(d/sigma)**2)
 
     def step(self, accion):
         """Ejecuta un instante
@@ -145,8 +162,11 @@ class Entorno(gym.Env):
         #self._agent_location = np.clip(
         #    self._agent_location + direction, 0, self.size - 1
         #)
+
+
+
         dx, dy = accion[0], accion[1]
-        print(dx,dy, self._velocidad)
+        print(f'dx: {dx}, dy: {dy}, velocidad: {self._velocidad}')
         self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[0] + dy)
         time.sleep(1)
         self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
@@ -161,8 +181,9 @@ class Entorno(gym.Env):
         # Simple reward structure: +1 for reaching target, 0 otherwise
         # Alternative: could give small negative rewards for each step to encourage efficiency
         recompensa = self._get_recompensa()
+        print(f'recompensa: {recompensa}')
         
-        self._robobo_xy = self._get_xy()
+        self._blob_xy = self._get_xy()
         self._tamano_blob = self._get_tamano_blob()
         #self._distancia_a_blob = self._get_distancia_a_blob()
 
