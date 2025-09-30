@@ -132,6 +132,7 @@ class Entorno(gym.Env):
                     posicion = self.sim.getObjectLocation(objeto)['position']
                     x_obj, y_obj = posicion['x'], posicion['y']
 
+            print(f'-> robobo ({x_rob},{y_rob}) -> objeto ({x_obj},{y_obj})')
             return math.sqrt((x_obj - x_rob)**2 + (y_obj - y_rob)**2)
 
 
@@ -140,7 +141,7 @@ class Entorno(gym.Env):
         print(f'descentre: {x-50}, distancia_a_blob: {d}')
         alpha1 = 0.5
         alpha2 = 0.5
-        sigma = 50
+        sigma = 15
         # OJO estoy usando el 50 pero si luego lo cambiamos a [0,1] habra que usar 0.5
         if x: return alpha1 * math.exp(-(x-50)**2) + alpha2 * math.exp(-(d/sigma)**2)
         else: return math.exp(-(d/sigma)**2)
@@ -181,7 +182,7 @@ class Entorno(gym.Env):
         # Simple reward structure: +1 for reaching target, 0 otherwise
         # Alternative: could give small negative rewards for each step to encourage efficiency
         recompensa = self._get_recompensa()
-        print(f'recompensa: {recompensa}')
+        print(f'recompensa: {recompensa}\n\n')
         
         self._blob_xy = self._get_xy()
         self._tamano_blob = self._get_tamano_blob()
