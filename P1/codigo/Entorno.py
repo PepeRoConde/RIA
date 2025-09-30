@@ -1,4 +1,5 @@
 from typing import Optional
+import time
 import numpy as np
 import gymnasium as gym
 from robobopy.Robobo import Robobo
@@ -13,11 +14,14 @@ class Entorno(gym.Env):
 
         self.robocop = Robobo("localhost")
         self.robocop.connect()
+        self.velocidad_min = -100 # se hara clip con estos valores
+        self.velocidad_max = 100
 
 
         # inicializacion de las variables 
         self._robobo_xy = np.array([-1, -1], dtype=np.int32)
         self._tamano_blob = np.array([-1], dtype=np.int32)
+        self._velocidad = np.array([0, 0], dtype=np.float32)      
         #self._distancia_a_blob = np.array([-1.], dtype=np.float32)
 
         # CAMBIAR: que sea 100 me lo inventé
@@ -30,7 +34,7 @@ class Entorno(gym.Env):
                 # ...size (int): The area of the blob measured in pixels.
                 # es lo que pone en la documentacion de robobo sobre el tamano_blob
                 "tamano_blob": gym.spaces.Box(0, tamano_blob_max, shape=(1,), dtype=int),
-
+                "velocidad": gym.spaces.Box(self.velocidad_min, self.velocidad_max, shape=(2,), dtype=float)
                 # pongo 1000 por poner
                 #"distancia_a_blob": gym.spaces.Box(0,1000, shape=(1,), dtype=float)
             }
@@ -40,7 +44,7 @@ class Entorno(gym.Env):
         # si la accion es [2,4] no esque movewheels[2,4] 
         # esque movewheels[antesx + 2, antesy + 4]
         # asi mantener la velocidad es la misma accion independientemente del estado
-        self.action_space = gym.spaces.Box(-20, 20, shape=(2,), dtype=float)
+        self.action_space = gym.spaces.Box(self.velocidad_min, self.velocidad_max, shape=(2,), dtype=float)
 
     def _get_observacion(self):
         """Convierte estado interno a observación
@@ -49,8 +53,10 @@ class Entorno(gym.Env):
             dict: posicion de robobo y tamano del blob
         """
         #return {"robobo_xy": self._robobo_xy, "tamano_blob": self._tamano_blob, "distancia_a_blob": self._distancia_a_blob}
-        print(self._robobo_xy, self._tamano_blob)
-        return {"robobo_xy": self._robobo_xy, "tamano_blob": self._tamano_blob}
+        print(self._robobo_xy, self._tamano_blob, self._velocidad)
+        return {"robobo_xy": self._robobo_xy, 
+                "tamano_blob": self._tamano_blob, 
+                "velocidad": self._velocidad}
 
 
     # todo lo relacionado con info es dummy pero por si luego queremos usarlo
@@ -61,13 +67,23 @@ class Entorno(gym.Env):
         """
         Metodo auxiliar, interfaz con robocop
         """
-        return np.array([0,0])
+        blobs = self.robocop.readAllColorBlobs()
+        if blobs:
+            for key in blobs:
+                blob = blobs[key]
+                return np.array([blob.posx,blob.posy])
+        return np.array([-1,-1])
 
     def _get_tamano_blob(self):
         """
         Metodo auxiliar, interfaz con robocop
         """
-        return np.array([0])
+        blobs = self.robocop.readAllColorBlobs()
+        if blobs:
+            for key in blobs:
+                blob = blobs[key]
+                return np.array([blob.size])
+        return np.array([-1])
 
     #def _get_distancia_a_blob(self):
     #    """
@@ -129,7 +145,12 @@ class Entorno(gym.Env):
         #self._agent_location = np.clip(
         #    self._agent_location + direction, 0, self.size - 1
         #)
-
+        dx, dy = accion[0], accion[1]
+        print(dx,dy, self._velocidad)
+        self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[0] + dy)
+        time.sleep(1)
+        self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
+        self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)
         # Check if agent reached the target
         #terminated = np.array_equal(self._agent_location, self._target_location)
         terminated = False
@@ -140,6 +161,10 @@ class Entorno(gym.Env):
         # Simple reward structure: +1 for reaching target, 0 otherwise
         # Alternative: could give small negative rewards for each step to encourage efficiency
         recompensa = self._get_recompensa()
+        
+        self._robobo_xy = self._get_xy()
+        self._tamano_blob = self._get_tamano_blob()
+        #self._distancia_a_blob = self._get_distancia_a_blob()
 
         observacion = self._get_observacion()
         info = self._get_info()

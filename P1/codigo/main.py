@@ -4,8 +4,6 @@ from Entorno import Entorno
 
 env = Entorno()
 # It will check your custom environment and output additional warnings if needed
-check_env(env)
 
-print(env.__dict__)
 # Define and Train the agent
-#model = A2C("CnnPolicy", env).learn(total_timesteps=1000)
+model = A2C("MultiInputPolicy", env).learn(total_timesteps=100000)
