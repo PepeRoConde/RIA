@@ -6,76 +6,75 @@ from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
 import math
 
-# https://gymnasium.farama.org/introduction/create_custom_env/
-# https://gymnasium.farama.org/api/spaces/
 class Entorno(gym.Env):
 
     def __init__(self):
-
-
         self.robocop = Robobo("localhost")
         self.robocop.connect()
         self.sim = RoboboSim("localhost")
         self.sim.connect()
-        self.velocidad_min = -100 # se hara clip con estos valores
-        self.velocidad_max = 100
-
-
+        self.velocidad_min = -40
+        self.velocidad_max = 40
+        self.robocop.moveTiltTo(95,5)
         # inicializacion de las variables 
         self._blob_xy = np.array([-1, -1], dtype=np.int32)
+        self._blob_xy_anterior = np.array([-1, -1], dtype=np.int32)  # NUEVO: para recordar última posición
         self._tamano_blob = np.array([-1], dtype=np.int32)
-        self._velocidad = np.array([0, 0], dtype=np.float32)      
-        #self._distancia_a_blob = np.array([-1.], dtype=np.float32)
+        self._velocidad = np.array([0, 0], dtype=np.float32)
 
-        # CAMBIAR: que sea 100 me lo inventé
         tamano_blob_max = 100
 
-        # por un lado el xy que va de -1 a 101 y luego el tamano_blob
         self.observation_space = gym.spaces.Dict(
             {
                 "blob_xy": gym.spaces.Box(-1, 102, shape=(2,), dtype=int),
-                # ...size (int): The area of the blob measured in pixels.
-                # es lo que pone en la documentacion de robobo sobre el tamano_blob
                 "tamano_blob": gym.spaces.Box(0, tamano_blob_max, shape=(1,), dtype=int),
                 "velocidad": gym.spaces.Box(self.velocidad_min, self.velocidad_max, shape=(2,), dtype=float)
-                # pongo 1000 por poner
-                #"distancia_a_blob": gym.spaces.Box(0,1000, shape=(1,), dtype=float)
             }
         )
 
-        # va de 0 a 20 y en R2
-        # si la accion es [2,4] no esque movewheels[2,4] 
-        # esque movewheels[antesx + 2, antesy + 4]
-        # asi mantener la velocidad es la misma accion independientemente del estado
         self.action_space = gym.spaces.Box(self.velocidad_min, self.velocidad_max, shape=(2,), dtype=float)
 
     def _get_observacion(self):
-        """Convierte estado interno a observación
-
-        Devuelve:
-            dict: posicion de robobo y tamano del blob
-        """
-        #return {"blob_xy": self._blob_xy, "tamano_blob": self._tamano_blob, "distancia_a_blob": self._distancia_a_blob}
+        """Convierte estado interno a observación"""
         print(f'xy: {self._blob_xy}, tamano_blob: {self._tamano_blob}, velocidad {self._velocidad}')
         return {"blob_xy": self._blob_xy, 
                 "tamano_blob": self._tamano_blob, 
                 "velocidad": self._velocidad}
 
-
-    # todo lo relacionado con info es dummy pero por si luego queremos usarlo
     def _get_info(self):
         return {'supu':'tamadre'}
 
     def _get_xy(self):
         """
-        Metodo auxiliar, interfaz con robocop
+        Metodo auxiliar, interfaz con robocop.
+        Ahora también maneja la memoria de dirección cuando el blob desaparece.
         """
         blobs = self.robocop.readAllColorBlobs()
+        
         if blobs:
+            # El blob está visible
             for key in blobs:
                 blob = blobs[key]
-                return np.array([blob.posx,blob.posy])
-        return np.array([-1,-1])
+                nueva_posicion = np.array([blob.posx, blob.posy])
+                # Guardamos la posición anterior antes de actualizar
+                self._blob_xy_anterior = self._blob_xy.copy() if self._blob_xy[0] != -1 else nueva_posicion.copy()
+                return nueva_posicion
+        else:
+            # El blob NO está visible
+            # Comparamos con la última posición conocida para saber hacia dónde se fue
+            if self._blob_xy_anterior[0] != -1:  # Si teníamos una posición anterior válida
+                x_anterior = self._blob_xy_anterior[0]
+                
+                # Determinamos la dirección basándonos en la última posición conocida
+                if x_anterior < 50:
+                    # Estaba a la izquierda, probablemente se fue más a la izquierda
+                    return np.array([-1, self._blob_xy_anterior[1]])
+                else:
+                    # Estaba a la derecha, probablemente se fue más a la derecha
+                    return np.array([101, self._blob_xy_anterior[1]])
+            else:
+                # No hay información previa, devolvemos -1 por defecto
+                return np.array([-1, -1])
 
     def _get_tamano_blob(self):
         """
@@ -88,30 +87,16 @@ class Entorno(gym.Env):
                 return np.array([blob.size])
         return np.array([-1])
 
-    #def _get_distancia_a_blob(self):
-    #    """
-    #    Metodo auxiliar, interfaz con robocop
-    #    """
-    #    pass
-
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
-        """Nuevo episodio
-
-        Args:
-            semilla: semilla para reproducibilidad
-
-        Returns:
-            tuple: (observation, info) for the initial state
-        """
-        # hola marce, esta linea tiene que ser así
+        """Nuevo episodio"""
         super().reset(seed=seed)
 
-        # los metodos hablan con robocop y lo meten en las variables
+        # Reiniciamos también la memoria de posición anterior
+        self._blob_xy_anterior = np.array([-1, -1], dtype=np.int32)
+        
         self._blob_xy = self._get_xy()
         self._tamano_blob = self._get_tamano_blob()
-        #self._distancia_a_blob = self._get_distancia_a_blob()
 
-        # las variables son llamadas por este metodo que construye el diccionario
         observacion = self._get_observacion()
         info = self._get_info()
 
@@ -135,58 +120,45 @@ class Entorno(gym.Env):
             print(f'-> robobo ({x_rob},{y_rob}) -> objeto ({x_obj},{y_obj})')
             return math.sqrt((x_obj - x_rob)**2 + (y_obj - y_rob)**2)
 
-
         x = self._blob_xy[0]
         d = _distancia_a_blob()
-        print(f'descentre: {x-50}, distancia_a_blob: {d}')
-        alpha1 = 0.5
-        alpha2 = 0.5
-        sigma = 15
-        # OJO estoy usando el 50 pero si luego lo cambiamos a [0,1] habra que usar 0.5
-        if x: return alpha1 * math.exp(-(x-50)**2) + alpha2 * math.exp(-(d/sigma)**2)
-        else: return math.exp(-(d/sigma)**2)
+        
+            
+    
+        if 0 <= x <= 100:
+            descentrado = abs(x - 50)
+            recompensa = -d - descentrado
+        
+        return recompensa
+        
+        
 
     def step(self, accion):
-        """Ejecuta un instante
-
-        Args:
-            accion: el incremento a tomar 
-
-        Returns:
-            tuple: (observation, reward, terminated, truncated, info)
-        """
-        # Map the discrete action (0-3) to a movement direction
-        #direction = self._action_to_direction[action]
-
-        # Update agent position, ensuring it stays within grid bounds
-        # np.clip prevents the agent from walking off the edge
-        #self._agent_location = np.clip(
-        #    self._agent_location + direction, 0, self.size - 1
-        #)
-
-
-
-        dx, dy = accion[0], accion[1]
-        print(f'dx: {dx}, dy: {dy}, velocidad: {self._velocidad}')
-        self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[0] + dy)
+        """Ejecuta un instante"""
+        # Ahora las acciones van de 0 a 20 directamente (sin conversión)
+        dx = accion[0]  # 0 -> frenar, 10 -> velocidad media, 20 -> máxima
+        dy = accion[1]
+        
+        print(f'accion: {accion}, velocidad_antes: {self._velocidad}')
+        
+        # Directamente usamos la acción como velocidad objetivo
+        self._velocidad[0] = np.clip(dx, self.velocidad_min, self.velocidad_max)
+        self._velocidad[1] = np.clip(dy, self.velocidad_min, self.velocidad_max)
+        
+        print(f'velocidad_despues: {self._velocidad}')
+        
+        # Enviamos la velocidad
+        self.robocop.moveWheels(int(self._velocidad[0]), int(self._velocidad[1]))
         time.sleep(1)
-        self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
-        self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)
-        # Check if agent reached the target
-        #terminated = np.array_equal(self._agent_location, self._target_location)
+        
         terminated = False
-        # We don't use truncation in this simple environment
-        # (could add a step limit here if desired)
         truncated = False
 
-        # Simple reward structure: +1 for reaching target, 0 otherwise
-        # Alternative: could give small negative rewards for each step to encourage efficiency
         recompensa = self._get_recompensa()
         print(f'recompensa: {recompensa}\n\n')
         
         self._blob_xy = self._get_xy()
         self._tamano_blob = self._get_tamano_blob()
-        #self._distancia_a_blob = self._get_distancia_a_blob()
 
         observacion = self._get_observacion()
         info = self._get_info()
