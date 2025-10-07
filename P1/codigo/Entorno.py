@@ -158,7 +158,7 @@ class Entorno(gym.Env):
 
         dx, dy = accion[0], accion[1]
         print(f'dx: {dx}, dy: {dy}, velocidad: {self._velocidad}')
-        self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[0] + dy)
+        self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[1] + dy)
         time.sleep(1)
         self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
         self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)

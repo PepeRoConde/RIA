@@ -2,6 +2,9 @@
 # cosas inmediatas que se me van ocurriendo
 - [ ] Añadir sensores IR
 - [ ] Desglosar todo lo relacionado con robobo en un archivo aparte, que haga de API
+- [ ] Representación interna entre 0 y 1
+- [ ] (Probar) función de recompensa centr times d + d
+- [ ] Cambiar modelo desde la linea de comandos
 
 
 ---
