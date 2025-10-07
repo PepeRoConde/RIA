@@ -155,16 +155,6 @@ class Entorno(gym.Env):
         Returns:
             tuple: (observation, reward, terminated, truncated, info)
         """
-        # Map the discrete action (0-3) to a movement direction
-        #direction = self._action_to_direction[action]
-
-        # Update agent position, ensuring it stays within grid bounds
-        # np.clip prevents the agent from walking off the edge
-        #self._agent_location = np.clip(
-        #    self._agent_location + direction, 0, self.size - 1
-        #)
-
-
 
         dx, dy = accion[0], accion[1]
         print(f'dx: {dx}, dy: {dy}, velocidad: {self._velocidad}')
