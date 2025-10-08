@@ -143,7 +143,7 @@ class Entorno(gym.Env):
         atras = self._IR[1]
         print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
         # OJO estoy usando el 50 pero si luego lo cambiamos a [0,1] habra que usar 0.5
-        return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + float(self._tamano_blob)
+        return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + 0.1 * float(self._tamano_blob)
 
     def step(self, accion):
         """Ejecuta un instante

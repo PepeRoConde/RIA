@@ -44,7 +44,7 @@ else:
 modelo.learn(total_timesteps=pasos_por_episodio * numero_episodios)
 
 # Save model with hyperparameter-based path
-save_name = f"sac_alpha1_{alpha1}_alpha2_{alpha2}_sigma_{sigma}.zip"
+save_name = f"sac_alpha1_{alpha1}_alpha2_{alpha2}_alpha3_{alpha3}_sigma_{sigma}.zip"
 save_path = os.path.join(weights_save_base_path, save_name)
 os.makedirs(weights_save_base_path, exist_ok=True)
 modelo.save(save_path)
