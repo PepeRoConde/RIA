@@ -5,7 +5,7 @@ import numpy as np
 import math
 
 def init_Robobo(ip='localhost'):
-    return Robobo(ip)
+    return Robobo(ip) 
 
 def init_RoboboSim(ip='localhost'):
     return RoboboSim(ip)
@@ -64,3 +64,5 @@ def _distancia_a_blob(Entorno):
 
 def reset(Entorno):
     Entorno.sim.resetSimulation()
+    Entorno.sim.wait(1)
+    Entorno.robocop.moveTiltTo(90,100,wait=False)

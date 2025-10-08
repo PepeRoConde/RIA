@@ -14,11 +14,13 @@ class Entorno(gym.Env):
                  pasos_por_episodio = 10,
                  alpha1 = 0.5,
                  alpha2 = 0.5,
+                 alpha3 = 0.00001,
                  sigma = 15):
 
         self.pasos_por_episodio =  pasos_por_episodio
         self.alpha1 = alpha1
         self.alpha2 = alpha2
+        self.alpha3 = alpha3
         self.sigma = sigma
 
         self.robocop = RoboboAPI.init_Robobo()
@@ -26,8 +28,8 @@ class Entorno(gym.Env):
         self.sim = RoboboAPI.init_RoboboSim()
         self.sim.connect()
 
-        self.velocidad_min = -100 # se hara clip con estos valores
-        self.velocidad_max = 100
+        self.velocidad_min = -2 # se hara clip con estos valores
+        self.velocidad_max = 2
 
         self.recompensas = []
 
@@ -126,6 +128,8 @@ class Entorno(gym.Env):
         # las variables son llamadas por este metodo que construye el diccionario
         observacion = self._get_observacion()
         info = self._get_info()
+        
+        #self.robocop.moveTiltTo(105,10)
 
         return observacion, info
 
@@ -136,10 +140,10 @@ class Entorno(gym.Env):
 
         x = self._blob_xy[0]
         d = RoboboAPI._distancia_a_blob(self)
-        print(f'descentre: {x-50}, distancia_a_blob: {d}')
+        atras = self._IR[1]
+        print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
         # OJO estoy usando el 50 pero si luego lo cambiamos a [0,1] habra que usar 0.5
-        if x: return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2)
-        else: return math.exp(-(d/self.sigma)**2)
+        return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + float(self._tamano_blob)
 
     def step(self, accion):
         """Ejecuta un instante
@@ -151,13 +155,16 @@ class Entorno(gym.Env):
             tuple: (observation, reward, terminated, truncated, info)
         """
         
-        print(f'-- Paso #{self.numero_de_pasos}')
+        print(f'-- Paso #{self.numero_de_pasos}\n accion: {accion}')
         dx, dy = accion[0], accion[1]
         #print(f'dx: {dx}, dy: {dy}, velocidad: {self._velocidad}')
         self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[1] + dy)
         time.sleep(1)
         self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
         self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)
+
+        print(f"VELOCIDAD {self._velocidad}")
+
         if self.numero_de_pasos == self.pasos_por_episodio:
             terminated, truncated  = True, True
         else:
