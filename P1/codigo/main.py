@@ -6,7 +6,7 @@ from Entorno import Entorno
 import Plots
 
 # Load configuration
-with open("config.yaml", "r") as file:
+with open("P1/codigo/config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 # Unpack config
@@ -44,11 +44,18 @@ else:
 modelo.learn(total_timesteps=pasos_por_episodio * numero_episodios)
 
 # Save model with hyperparameter-based path
-save_name = f"sac_alpha1_{alpha1}_alpha2_{alpha2}_alpha3_{alpha3}_sigma_{sigma}.zip"
+save_name = f"sac_alpha1_{alpha1}_alpha2_{alpha2}_alpha3_{alpha3}_sigma_{sigma}_numeps{numero_episodios}.zip"
 save_path = os.path.join(weights_save_base_path, save_name)
 os.makedirs(weights_save_base_path, exist_ok=True)
 modelo.save(save_path)
 print(f"Model saved to {save_path}")
 
+
 # Plot results
-Plots.plot_recompensas(entorno.recompensas, pasos_por_episodio)
+#Plots.plot_recompensas(entorno.recompensas, pasos_por_episodio)
+#Plots.plot_trayectorias(entorno.xy_objeto, entorno.xy_robot)
+Plots.plot_recompensas_episodios(entorno.historial_recompensas,name="histRecompensas")
+Plots.plot_trayectorias_episodios(entorno.historial_xy_objeto, entorno.historial_xy_robot,name = "histCoord")
+Plots.plot_recompensas_ultimo_episodio(entorno.historial_recompensas, name = "recompensas")
+Plots.plot_trayectoria_ultimo_episodio(entorno.historial_xy_objeto, entorno.historial_xy_robot,name = "coords")
+print(entorno.historial_xy_objeto)

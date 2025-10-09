@@ -21,6 +21,30 @@ def _get_xy(Entorno):
             return np.array([blob.posx,blob.posy])
     return np.array([-1,-1])
 
+
+def _get_object_xy(Entorno):
+    """
+    Metodo auxiliar, interfaz con robocop
+    """
+    objetos = Entorno.sim.getObjects()
+    if objetos != None and len(objetos) > 0:
+        for objeto in objetos:
+            posicion = Entorno.sim.getObjectLocation(objeto)['position']
+            x_obj, y_obj = posicion['x'], posicion['y']
+    
+    return np.array([x_obj,y_obj])
+
+        
+
+
+
+def _get_robot_xy(Entorno):
+    x_rob, y_rob = 0, 0
+    posicion_robobo = Entorno.sim.getRobotLocation(0)['position']
+    x_rob, y_rob = posicion_robobo['x'], posicion_robobo['y']
+    return np.array([x_rob,y_rob])
+
+
 def _get_IR(Entorno):
     """
     Metodo auxiliar, interfaz con robocop
@@ -65,4 +89,4 @@ def _distancia_a_blob(Entorno):
 def reset(Entorno):
     Entorno.sim.resetSimulation()
     Entorno.sim.wait(1)
-    Entorno.robocop.moveTiltTo(90,100,wait=False)
+    Entorno.robocop.moveTiltTo(105,100,wait=False)

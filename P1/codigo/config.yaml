@@ -7,7 +7,7 @@ alpha3: 0.0001
 sigma: 35
 
 load_weights: True
-weights_load_path: "model_weights/sac_alpha1_2.5_alpha2_0.5_alpha3_0.0001_sigma_35.zip"
-weights_save_base_path: "model_weights"
+weights_load_path: "P1/codigo/model_weights/sac_alpha1_2.5_alpha2_0.5_alpha3_0.0001_sigma_35.zip"
+weights_save_base_path: "P1/codigo/model_weights"
 
 
