@@ -1,13 +1,13 @@
 pasos_por_episodio: 60
-numero_episodios: 50
+numero_episodios: 60
 politica: MultiInputPolicy
 alpha1: 2.5
 alpha2: 0.6
 alpha3: 0.0001
 sigma: 35
 
-load_weights: False
-weights_load_path: "model_weights/sac_alpha1_2.5_alpha2_0.5_alpha3_0.0001_sigma_35_numeps300.zip"
-weights_save_base_path: "P1/codigo/model_weights"
+load_weights: True
+weights_load_path: "model_weights/sac_alpha1_2.5_alpha2_0.6_alpha3_0.0001_sigma_35_numeps3"
+weights_save_base_path: "model_weights"
 
 
