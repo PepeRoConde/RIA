@@ -1,8 +1,8 @@
 pasos_por_episodio: 60
-numero_episodios: 50
+numero_episodios: 250
 politica: MultiInputPolicy
 alpha1: 2.5
-alpha2: 0.5
+alpha2: 0.7
 alpha3: 0.0001
 sigma: 35
 
