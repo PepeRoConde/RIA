@@ -108,10 +108,10 @@ class Entorno(gym.Env):
         self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
         # Guardar posición inicial del objeto
-        self.xy_objeto_episodio.append(RoboboAPI._get_object_xy(self))
+        self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))
         
         # Guardar posición inicial del robot
-        robot_xy = RoboboAPI._get_robot_xy(self)  
+        robot_xy = RoboboAPI._get_robot_xz(self)  
         self.xy_robot_episodio.append(robot_xy)
 
         observacion = self._get_observacion()
@@ -164,13 +164,13 @@ class Entorno(gym.Env):
         self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
         # Guardar posiciones en el historial del episodio
-        self.xy_objeto_episodio.append(RoboboAPI._get_object_xy(self))
+        self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))
         #print(self.xy_objeto_episodio)
         
-        robot_xy = RoboboAPI._get_robot_xy(self)  
+        robot_xy = RoboboAPI._get_robot_xz(self)  
         self.xy_robot_episodio.append(robot_xy)
 
         observacion = self._get_observacion()
         info = self._get_info()
-
+        RoboboAPI.mover_blob_random_walk(self, 20, 20)
         return observacion, recompensa, terminated, truncated, info

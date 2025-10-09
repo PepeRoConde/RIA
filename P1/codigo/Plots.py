@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.ndimage import gaussian_filter1d
 
 def plot_recompensas(recompensas, pasos_por_episodio):
     plt.figure(figsize=(12, 5))
@@ -59,13 +60,15 @@ def plot_trayectorias(xy_objeto, xy_robot, title="Trayectorias del Robot y Objet
 
 
 
-def plot_recompensas_con_episodios(historial_recompensas, title="Recompensas por Step"):
+def plot_recompensas_con_episodios(historial_recompensas, title="Recompensas por Step", suavizar=True, sigma=2):
     """
     Plotea las recompensas a lo largo del tiempo, marcando los límites entre episodios
     
     Args:
         historial_recompensas: Lista de listas con recompensas de episodios completados
         title: Título del gráfico
+        suavizar: Si True, aplica suavizado gaussiano
+        sigma: Desviación estándar de la gaussiana (mayor = más suave)
     """
     
     # Concatenar todos los episodios completados
@@ -76,17 +79,34 @@ def plot_recompensas_con_episodios(historial_recompensas, title="Recompensas por
         todas_las_recompensas.extend(episodio)
         limites_episodios.append(len(todas_las_recompensas))
     
+    todas_las_recompensas = np.array(todas_las_recompensas)
+    
+    # Aplicar suavizado gaussiano si se solicita
+    if suavizar and len(todas_las_recompensas) > 0:
+        recompensas_suavizadas = gaussian_filter1d(todas_las_recompensas, sigma=sigma)
+    else:
+        recompensas_suavizadas = todas_las_recompensas
+    
     # Crear figura
     fig, ax = plt.subplots(figsize=(14, 6))
     
     # Plot de recompensas
     steps = np.arange(len(todas_las_recompensas))
-    ax.plot(steps, todas_las_recompensas, 'b-o', linewidth=2, markersize=4, alpha=0.7, label='Recompensas')
+    
+    # Plotear ambas: original (transparente) y suavizada
+    if suavizar:
+        ax.plot(steps, todas_las_recompensas, 'b-o', linewidth=1, markersize=2, 
+                alpha=0.3, label='Recompensas originales')
+        ax.plot(steps, recompensas_suavizadas, 'b-', linewidth=3, 
+                alpha=0.8, label=f'Recompensas suavizadas (σ={sigma})')
+    else:
+        ax.plot(steps, todas_las_recompensas, 'b-o', linewidth=2, markersize=4, 
+                alpha=0.7, label='Recompensas')
     
     # Marcar límites de episodios
     for limite in limites_episodios:
         ax.axvline(x=limite - 0.5, color='red', linestyle='--', alpha=0.5, linewidth=2)
-        ax.text(limite - 0.5, ax.get_ylim()[1] * 0.95, '1', 
+        ax.text(limite - 0.5, ax.get_ylim()[1] * 0.95, '|', 
                 fontsize=10, ha='center', color='red', fontweight='bold',
                 bbox=dict(boxstyle='round', facecolor='white', alpha=0.7))
     
@@ -196,45 +216,39 @@ def plot_recompensas_episodios(historial_recompensas, title="Recompensas concate
     plt.show()
 
 
-def plot_trayectoria_ultimo_episodio(historial_xy_objeto, historial_xy_robot, title="Trayectoria último episodio", name="name"):
-    """
-    Plotea la trayectoria del objeto y robot del último episodio en el plano XY.
 
+def plot_ultimo_episodio(lista1, lista2):
+    """
+    Plotea el último episodio de cada lista
+    
     Args:
-        historial_xy_objeto: Lista de listas con coordenadas XY del objeto por episodio.
-        historial_xy_robot: Lista de listas con coordenadas XY del robot por episodio.
-        title: Título del gráfico.
+        lista1: Lista de episodios (naranja)
+        lista2: Lista de episodios (azul)
     """
+    plt.figure(figsize=(12, 8))
     
-    # Obtener último episodio
-    xy_obj = np.array(historial_xy_objeto[-1], dtype=float)
-    xy_rob = np.array(historial_xy_robot[-1], dtype=float)
+    # Obtener último episodio de lista1
+    if len(lista1) > 0 and len(lista1[-1]) > 0:
+        ultimo_ep1 = np.array([coord for coord in lista1[-1]])
+        plt.plot(ultimo_ep1[:, 0], ultimo_ep1[:, 1], 'o-', color='orange', 
+                linewidth=2, markersize=5, label='Lista 1 (último episodio)')
     
-    fig, ax = plt.subplots(figsize=(8, 6))
-
-    # Plotear trayectorias
-    ax.plot(xy_obj[:, 0], xy_obj[:, 1], '-', color='orange', label='Objeto', alpha=0.8)
-    ax.plot(xy_rob[:, 0], xy_rob[:, 1], '-', color='blue', label='Robot', alpha=0.8)
+    # Obtener último episodio de lista2
+    if len(lista2) > 0 and len(lista2[-1]) > 0:
+        ultimo_ep2 = np.array([coord for coord in lista2[-1]])
+        plt.plot(ultimo_ep2[:, 0], ultimo_ep2[:, 1], 'o-', color='blue', 
+                linewidth=2, markersize=5, label='Lista 2 (último episodio)')
     
-    # Marcar inicio y fin
-    ax.scatter(xy_obj[0, 0], xy_obj[0, 1], color='orange', s=40, marker='o', label='Inicio objeto')
-    ax.scatter(xy_rob[0, 0], xy_rob[0, 1], color='blue', s=40, marker='o', label='Inicio robot')
-    ax.scatter(xy_obj[-1, 0], xy_obj[-1, 1], color='orange', s=40, marker='x', label='Fin objeto')
-    ax.scatter(xy_rob[-1, 0], xy_rob[-1, 1], color='blue', s=40, marker='x', label='Fin robot')
+    plt.xlabel('X')
+    plt.ylabel('Y')
+    plt.title('Último episodio de cada lista')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
     
-    ax.set_xlabel("Posición X", fontsize=12)
-    ax.set_ylabel("Posición Y", fontsize=12)
-    ax.set_title(title, fontsize=14, fontweight='bold')
-    ax.legend()
-    ax.grid(alpha=0.3)
-    plt.tight_layout()
-    ruta_salida = f"P1/figures/{name}.png"
-    fig.savefig(ruta_salida, dpi=300, bbox_inches='tight')
     plt.show()
 
 
-import matplotlib.pyplot as plt
-import numpy as np
+
 
 def plot_recompensas_ultimo_episodio(historial_recompensas, title="Recompensas último episodio",name="name"):
     """

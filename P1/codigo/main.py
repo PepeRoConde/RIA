@@ -50,12 +50,13 @@ os.makedirs(weights_save_base_path, exist_ok=True)
 modelo.save(save_path)
 print(f"Model saved to {save_path}")
 
-
+print(entorno.historial_xy_objeto)
+print(entorno.historial_xy_robot)
 # Plot results
 #Plots.plot_recompensas(entorno.recompensas, pasos_por_episodio)
 #Plots.plot_trayectorias(entorno.xy_objeto, entorno.xy_robot)
 Plots.plot_recompensas_episodios(entorno.historial_recompensas,name="histRecompensas")
 Plots.plot_trayectorias_episodios(entorno.historial_xy_objeto, entorno.historial_xy_robot,name = "histCoord")
 Plots.plot_recompensas_ultimo_episodio(entorno.historial_recompensas, name = "recompensas")
-Plots.plot_trayectoria_ultimo_episodio(entorno.historial_xy_objeto, entorno.historial_xy_robot,name = "coords")
+Plots.plot_ultimo_episodio(entorno.historial_xy_objeto, entorno.historial_xy_robot)
 print(entorno.historial_xy_objeto)

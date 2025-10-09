@@ -1,6 +1,6 @@
 from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
-
+import random
 import numpy as np
 import math
 
@@ -22,7 +22,7 @@ def _get_xy(Entorno):
     return np.array([-1,-1])
 
 
-def _get_object_xy(Entorno):
+def _get_object_xz(Entorno):
     """
     Metodo auxiliar, interfaz con robocop
     """
@@ -30,19 +30,19 @@ def _get_object_xy(Entorno):
     if objetos != None and len(objetos) > 0:
         for objeto in objetos:
             posicion = Entorno.sim.getObjectLocation(objeto)['position']
-            x_obj, y_obj = posicion['x'], posicion['y']
+            x_obj, z_obj = posicion['x'], posicion['z']
     
-    return np.array([x_obj,y_obj])
+    return np.array([x_obj,z_obj])
 
         
 
 
 
-def _get_robot_xy(Entorno):
+def _get_robot_xz(Entorno):
     x_rob, y_rob = 0, 0
     posicion_robobo = Entorno.sim.getRobotLocation(0)['position']
-    x_rob, y_rob = posicion_robobo['x'], posicion_robobo['y']
-    return np.array([x_rob,y_rob])
+    x_rob, z_rob = posicion_robobo['x'], posicion_robobo['z']
+    return np.array([x_rob,z_rob])
 
 
 def _get_IR(Entorno):
@@ -90,3 +90,51 @@ def reset(Entorno):
     Entorno.sim.resetSimulation()
     Entorno.sim.wait(1)
     Entorno.robocop.moveTiltTo(110,100,wait=False)
+
+
+def mover_blob_random_walk(entorno, dx, dz):
+    """
+    Mueve el blob en diagonal
+    
+    Args:
+        entorno: El entorno de simulación de Robobo
+        paso: Tamaño del paso en cada dirección (en metros)
+    """
+    # Obtener los objetos disponibles
+    objetos = entorno.sim.getObjects()
+    
+    if objetos is None or len(objetos) == 0:
+        print("No hay objetos en la simulación")
+        return None
+    
+    # Usar el primer objeto
+    if objetos != None and len(objetos) > 0:
+        for objeto in objetos:
+            posicion_actual = entorno.sim.getObjectLocation(objeto)['position']
+    
+    # Obtener posición actual del objeto
+    x_actual = posicion_actual['x']
+    y_actual = posicion_actual['y']
+    z_actual = posicion_actual['z']
+    
+
+    if random.random() > 0.5:
+        dx = dx
+    else:
+        dx = -dx
+    if random.random() > 0.5:
+        dz = dz
+    else:
+        dz = -dz
+    
+    # Movimiento diagonal (mismo paso en x e y)
+    x_nueva = x_actual + dx
+    z_nueva = z_actual + dz
+    
+    # Mover el objeto a la nueva posición
+    entorno.sim.setObjectLocation(
+        objeto, 
+        position={'x': x_nueva, 'y': y_actual, 'z': z_nueva}
+    )
+    
+    return None
