@@ -6,7 +6,7 @@ from Entorno import Entorno
 import Plots
 
 # Load configuration
-with open("P1/codigo/config.yaml", "r") as file:
+with open("config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 # Unpack config

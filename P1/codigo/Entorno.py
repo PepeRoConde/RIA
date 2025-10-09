@@ -81,24 +81,6 @@ class Entorno(gym.Env):
     def _get_info(self):
         return {'supu':'tamadre'}
 
-    def _get_xy(self):
-        """
-        Metodo auxiliar, interfaz con robocop
-        """
-        return RoboboAPI._get_xy(self)
-
-    def _get_IR(self):
-        """
-        Metodo auxiliar, interfaz con robocop
-        """
-        return RoboboAPI._get_IR(self)
-
-    def _get_tamano_blob(self):
-        """
-        Metodo auxiliar, interfaz con robocop
-        """
-        return RoboboAPI._get_tamano_blob(self)
-
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         """Nuevo episodio"""
         super().reset(seed=seed)
@@ -121,9 +103,9 @@ class Entorno(gym.Env):
         self.numero_de_pasos = 1
 
         # los metodos hablan con robocop y lo meten en las variables
-        self._blob_xy = self._get_xy()
-        self._IR = self._get_IR()
-        self._tamano_blob = self._get_tamano_blob()
+        self._blob_xy = RoboboAPI._get_xy(self)
+        self._IR = RoboboAPI._get_IR(self)
+        self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
         # Guardar posición inicial del objeto
         self.xy_objeto_episodio.append(RoboboAPI._get_object_xy(self))
@@ -146,14 +128,17 @@ class Entorno(gym.Env):
         d = RoboboAPI._distancia_a_blob(self)
         atras = self._IR[1]
         print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
-        return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + 0.1 * float(self._tamano_blob)
+        return math.log(max(0,self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + 0.1 * float(self._tamano_blob)))
 
     def step(self, accion):
         """Ejecuta un instante"""
         
         print(f'-- Paso #{self.numero_de_pasos}\n accion: {accion}')
-        dx, dy = accion[0], accion[1]
-        
+        avance_recto, gire_derecha = accion[0], accion[1]
+        dx = avance_recto + gire_derecha
+        dy = avance_recto - gire_derecha
+
+
         self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[1] + dy)
         time.sleep(1)
         self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
@@ -169,17 +154,18 @@ class Entorno(gym.Env):
         self.numero_de_pasos += 1
 
         recompensa = self._get_recompensa()
+        print(f'Recompensa: {recompensa}')
         self.recompensas_episodio.append(recompensa)
-        print(self.recompensas_episodio)
+        #print(self.recompensas_episodio)
         
         
-        self._blob_xy = self._get_xy()
-        self._IR = self._get_IR()
-        self._tamano_blob = self._get_tamano_blob()
+        self._blob_xy = RoboboAPI._get_xy(self)
+        self._IR = RoboboAPI._get_IR(self)
+        self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
         # Guardar posiciones en el historial del episodio
         self.xy_objeto_episodio.append(RoboboAPI._get_object_xy(self))
-        print(self.xy_objeto_episodio)
+        #print(self.xy_objeto_episodio)
         
         robot_xy = RoboboAPI._get_robot_xy(self)  
         self.xy_robot_episodio.append(robot_xy)
