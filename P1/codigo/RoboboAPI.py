@@ -89,4 +89,4 @@ def _distancia_a_blob(Entorno):
 def reset(Entorno):
     Entorno.sim.resetSimulation()
     Entorno.sim.wait(1)
-    Entorno.robocop.moveTiltTo(105,100,wait=False)
+    Entorno.robocop.moveTiltTo(110,100,wait=False)
