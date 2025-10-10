@@ -283,3 +283,47 @@ def plot_recompensas_ultimo_episodio(historial_recompensas, title="Recompensas �
     ruta_salida = f"P1/figures/{name}.png"
     fig.savefig(ruta_salida, dpi=300, bbox_inches='tight')
     plt.show()
+
+
+
+
+def plot_ultimo_episodio_trayectorias(historial_xy_objeto, historial_xy_robot, title="Trayectorias del último episodio", name="ultimo_episodio_trayectorias"):
+    """
+    Plotea las trayectorias del objeto y del robot en el plano XY
+    para el último episodio solamente.
+
+    Args:
+        historial_xy_objeto: Lista de listas con coordenadas XY del objeto por episodio
+        historial_xy_robot: Lista de listas con coordenadas XY del robot por episodio
+        title: Título del gráfico
+        name: Nombre del archivo para guardar
+    """
+    
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    # Obtener el último episodio
+    xy_obj = np.array(historial_xy_objeto[-1], dtype=float)
+    xy_rob = np.array(historial_xy_robot[-1], dtype=float)
+    
+    # Plotear trayectorias
+    ax.plot(xy_obj[:, 0], xy_obj[:, 1], '-', color='orange', alpha=0.8, linewidth=2, label='Objeto')
+    ax.plot(xy_rob[:, 0], xy_rob[:, 1], '-', color='blue', alpha=0.8, linewidth=2, label='Robot')
+    
+    # Marcar inicio (círculo) y fin (x) del episodio
+    ax.scatter(xy_obj[0, 0], xy_obj[0, 1], color='orange', s=100, marker='o', zorder=5, edgecolors='black', linewidths=1.5)
+    ax.scatter(xy_rob[0, 0], xy_rob[0, 1], color='blue', s=100, marker='o', zorder=5, edgecolors='black', linewidths=1.5)
+    ax.scatter(xy_obj[-1, 0], xy_obj[-1, 1], color='orange', s=100, marker='x', zorder=5, linewidths=2)
+    ax.scatter(xy_rob[-1, 0], xy_rob[-1, 1], color='blue', s=100, marker='x', zorder=5, linewidths=2)
+    
+    # Etiquetas y formato
+    ax.set_xlabel("Posición X", fontsize=12)
+    ax.set_ylabel("Posición Y", fontsize=12)
+    ax.set_title(title, fontsize=14, fontweight='bold')
+    ax.legend(fontsize=10)
+    ax.grid(alpha=0.3)
+    ax.set_aspect('equal', adjustable='box')  # Mantener proporciones en XY
+    plt.tight_layout()
+    
+    ruta_salida = f"P1/figures/{name}.png"
+    fig.savefig(ruta_salida, dpi=300, bbox_inches='tight')
+    plt.show()

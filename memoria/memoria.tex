@@ -215,7 +215,22 @@ los sensores infrarrojos.
 
 \section{Conclusiones}
 
-No sé que poner aquí tío, el robot no es el mejor en lo suyo pero tampoco vamos a decir que sea una mierda
+Si bien el robot no presenta un comportamiento tan bueno como la demo que presentó el profesor en clase, se considera que se puede demostrar que, efectivamente, ha aprendido un comportamiento más o menos inteligente. La función de coste efectivamente ha dirigido las acciones del robot hacia las deseadas, de forma más o menos rápida y, con el suficiente tiempo para experimentar, creemos que sería posible alcanzar un mejor comportamiento a base de prueba y error con los diferentes parámetros.
+Se observa cómo el robot rara vez consigue agarrar el objeto completamente pues parte de su función de recompensa consta del tamaño del blob, el cual disminuirá al encontrarse muy cerca del mismo, pues dejará de estar en su campo de visión. Una forma de arreglar este problema podría ser anular tal parte de la recompensa tras cierto tamaño de blob, e incluir como incentivo las activaciones del sensor IR delantero por ejemplo. Igualmente viendo las gráficas apreciamos cómo el robot busca siempre al blob y mantenerse cerca de el mismo.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figure_1.png}
+    \caption{Evolución de las recompensas en el último episodio de entrenamiento}
+    \label{fig:etiqueta}
+\end{figure}
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.8\textwidth]{Figure_12.png}
+    \caption{Trayectorias del blob y robot en el último episodio.}
+    \label{fig:etiqueta2}
+\end{figure}
 
 \subsection{Trabajo futuro}
 
