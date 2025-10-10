@@ -15,13 +15,17 @@ class Entorno(gym.Env):
                 alpha1 = 0.5,
                 alpha2 = 0.5,
                 alpha3 = 0.00001,
-                sigma = 15):
+                alpha4 = 0.1,
+                sigma = 15,
+                velocidad_blob = 20):
 
         self.pasos_por_episodio =  pasos_por_episodio
         self.alpha1 = alpha1
         self.alpha2 = alpha2
         self.alpha3 = alpha3
+        self.alpha4 = alpha4
         self.sigma = sigma
+        self._velocidad_blob = velocidad_blob
 
         self.robocop = RoboboAPI.init_Robobo()
         self.robocop.connect()
@@ -128,7 +132,7 @@ class Entorno(gym.Env):
         d = RoboboAPI._distancia_a_blob(self)
         atras = self._IR[1]
         print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
-        return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + 0.1 * float(self._tamano_blob)
+        return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + self.alpha4 * float(self._tamano_blob)
 
     def step(self, accion):
         """Ejecuta un instante"""
@@ -172,5 +176,5 @@ class Entorno(gym.Env):
 
         observacion = self._get_observacion()
         info = self._get_info()
-        RoboboAPI.mover_blob_random_walk(self, 20, 20)
+        RoboboAPI.mover_blob_random_walk(self, self._velocidad_blob, self._velocidad_blob)
         return observacion, recompensa, terminated, truncated, info
