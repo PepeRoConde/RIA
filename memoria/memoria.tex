@@ -43,6 +43,9 @@
 
 \maketitle
 
+\tableofcontents
+
+\newpage
 
 \section{Introducción}
 
@@ -63,7 +66,7 @@ del blob detectado por la cámara, con valores en el rango $[-1, 102]$. El valor
 especial $-1$ indica que el blob no está visible en el campo visual del robot.
 La segunda parte corresponde a los sensores \textbf{IR}, que proporcionan
 lecturas de los sensores infrarrojos frontal y trasero con valores en el rango
-$[0, 1000]$. La tercera parte es el \textbf{tamano\_blob}, que representa el
+$[0, 1000]$, clave para saber si el robot está cerca de una pared. La tercera parte es el \textbf{tamano\_blob}, que representa el
 tamaño aparente del blob medido en píxeles, con valores en el rango $[0, 1000]$.
 Un tamaño mayor indica que el robot está más cerca del objeto objetivo.
 Finalmente, \textbf{velocidad} contiene las velocidades actuales
@@ -76,7 +79,7 @@ El espacio de acciones es continuo y bidimensional, definido como un
 cada acción representa el avance recto, donde valores positivos provocan avance
 hacia adelante y valores negativos producen retroceso. El segundo
 controla el giro, donde valores positivos generan rotación a la derecha y
-valores negativos producen rotación a la izquierda.
+valores negativos producen rotación a la izquierda. Esta representación pone de manifiesto nuestra creencia a que las acciones más fundamentales son ``avanzar'' y ``girar''. Ambas requieren una sincronización entre ambas ruedas, por eso, al representar la acción de esta forma conseguimos que Robobo no tenga que aprender esa sincronización. 
 
 Las velocidades finales de las ruedas se calculan:
 \begin{align}
@@ -92,19 +95,23 @@ La función de recompensa está diseñada para incentivar múltiples comportamie
 deseables mediante la combinación de cuatro términos. Se define:
 
 \begin{equation}
-R = \alpha_1 \cdot e^{-(x-50)^2} + \alpha_2 \cdot e^{-\left(\frac{d}{\sigma}\right)^2} - \alpha_3 \cdot \max(0, IR_{\text{atras}} - 58) + 0.1 \cdot \text{tamano\_blob}
+R = \alpha_1 \cdot e^{-(descentre)^2} + \alpha_2 \cdot e^{-\left(\frac{d}{\sigma}\right)^2} - \alpha_3 \cdot \theta(IR_{\text{atras}} - 58) + \alpha_4 \cdot \text{tamano\_blob}
 \end{equation}
 
-El primer término, $\alpha_1 \cdot e^{-(x-50)^2}$, proporciona una recompensa gaussiana por mantener el blob centrado horizontalmente en la imagen. El valor óptimo se alcanza cuando $x = 50$, es decir, cuando el objeto se encuentra en el centro del campo visual. El segundo término, $\alpha_2 \cdot e^{-(d/\sigma)^2}$, recompensa la proximidad al blob mediante una función gaussiana de la distancia euclidiana $d$ al objeto, donde el parámetro $\sigma$ controla la escala espacial de la recompensa. El tercer término, $-\alpha_3 \cdot \max(0, IR_{\text{atras}} - 58)$, introduce una penalización cuando el sensor infrarrojo trasero detecta obstáculos, evitando así colisiones durante maniobras de retroceso. Finalmente, el cuarto término, $0.1 \cdot \text{tamano\_blob}$, proporciona una recompensa proporcional al tamaño aparente del blob, incentivando activamente la aproximación al objeto.
+Donde
+\begin{itemize}
+	\item $descentre := x_{blob} - 50$, mide cuanto se aleja el blob del centro de la pantalla. Si justo esta en el centro, $x_{blob}$ = 50 y por tanto $descentre$ = 0, con lo que la recompensa es máxima.
+	\item $\sigma$ es un hiperparámetro que controla la agresividad del decaimiento, su diferencia con $\alpha_3$ esque el último dice cuanto peso tiene ese término en la recompensa y el primero el valor del término en sí. Experimentalmente encontramos bueno el valor de 35.
+	\item $\theta(x)$ es la función max(0, $x$)
+	\item $\alpha \in \mathbb{R}^4$ es el hiperparámetro de ponderación, experimentalmente encontramos como aceptable el valor [2.5, 0.6, 0.0001, 0.1].
+\end{itemize}
 
-Los hiperparámetros empleados en la función de recompensa son $\alpha_1 = 0.5$
-para el peso del centrado horizontal, $\alpha_2 = 0.5$ para el peso de la
-proximidad, $\alpha_3 = 0.00001$ para el peso de la penalización por obstáculo
-trasero, y $\sigma = 15$ como escala de la gaussiana de proximidad.
+El primer término, $\alpha_1 \cdot e^{-(descentre)^2}$, proporciona una recompensa gaussiana por mantener el blob centrado horizontalmente en la imagen. El valor óptimo se alcanza cuando $x = 50$, es decir, cuando el objeto se encuentra en el centro del campo visual. El segundo término, $\alpha_2 \cdot e^{-(d/\sigma)^2}$, recompensa la proximidad al blob mediante una función gaussiana de la distancia euclidiana $d$ al objeto, donde el parámetro $\sigma$ controla la escala espacial de la recompensa. El tercer término, $-\alpha_3 \cdot \theta (IR_{\text{atras}} - 58)$, introduce una penalización cuando el sensor infrarrojo trasero detecta obstáculos, evitando así colisiones durante maniobras de retroceso. Como de forma basal el sensor da 57 (y valores más altos cuando tiene el blob o una pared cerca) le restamos 58 y aplicamos la función $\theta (x)$, son estos valores resultantes los que penalizan. Finalmente, el cuarto término, $0.1 \cdot \text{tamano\_blob}$, supone una recompensa proporcional al tamaño aparente del blob, incentivando activamente la aproximación al objeto.
+
 
 \subsection{Dinámica del episodio}
 
-Cada episodio tiene una duración fija de 60 pasos temporales. Al finalizar cada
+Cada episodio tiene una duración fija \footnote{Ajustable en \texttt{config.yaml}.} de 60 pasos temporales. Al finalizar cada
 paso se ejecuta la acción seleccionada por el agente y se actualiza el estado
 del robot en el simulador mediante el envío de comandos de velocidad a las
 ruedas. Posteriormente, el blob se mueve de forma aleatoria siguiendo un patrón
@@ -141,6 +148,8 @@ tilt de la cámara. La API incluye métodos para obtener posiciones
 globales tanto del robot como del objeto en el mundo simulado, así como para
 calcular distancias euclidianas entre ambos elementos.
 
+Estas decisiones de programación fueron tomadas siguiendo la filosofía de Separación de Intereses (\emph{Separation of concerns}, en inglés) de Edsger W. Dijkstra.
+
 \subsection{Método \texttt{reset}}
 
 Al inicio de cada episodio, el método \texttt{reset} se encarga de preparar el
@@ -148,7 +157,7 @@ entorno para una nueva secuencia de interacciones. Primero guarda el historial
 del episodio anterior en las listas globales de almacenamiento. Después,
 reinicia el simulador a su estado inicial. La
 cámara del robot se posiciona a 105° para ver mejor el
-blob. Seguidamente se leen las observaciones iniciales desde los sensores del
+blob (aunque encontramos que si está muy cerca sigue sin poderlo ver correctamente, argumentablemente un defecto de Robobo). Seguidamente se leen las observaciones iniciales desde los sensores del
 robot. Las posiciones iniciales tanto del robot como del objeto se registran en
 los historiales correspondientes. Finalmente, el método retorna la observación
 inicial al agente para que pueda comenzar el proceso de toma de decisiones.
@@ -161,7 +170,7 @@ seleccionada por el agente y calcula las nuevas velocidades de las ruedas
 aplicando las ecuaciones de control diferencial previamente descritas. Estas
 velocidades se envían al robot y el movimiento se ejecuta durante un intervalo
 de 1 segundo. Tras completarse el movimiento del robot, el blob se desplaza de
-forma aleatoria según el patrón de random walk implementado. A continuación se
+forma aleatoria según el patrón de random walk implementado \footnote{La velocidad a la que se mueve el blob puede ser ajustada en \texttt{config.yaml}}. A continuación se
 actualizan todas las observaciones mediante la lectura de los sensores y se
 evalúa la función de recompensa utilizando el nuevo estado. Las posiciones
 actuales y la recompensa obtenida se almacenan en los historiales
@@ -169,6 +178,19 @@ correspondientes. Finalmente, el método determina si el episodio ha alcanzado s
 condición de terminación y retorna al agente la observación actualizada, la
 recompensa obtenida, los flags de terminación y truncamiento, y un diccionario
 con información adicional del paso.
+
+\subsection{¿Cómo ejecutar?}
+
+
+\begin{lstlisting}[language=bash]
+git clone https://github.com/PepeRoConde/RIA
+python3 -m venv entornoFerreiroRomero
+source entornoFerreiroRomero/bin/activate
+pip install -r requirements.txt
+python P1/codigo/main.py
+\end{lstlisting}
+
+Los hiperparámetros que condicionan la ejecución pueden ser modificados en \texttt{config.yaml}. En caso de que se quiera probar (sin aprendizaje) se debera especificar \texttt{learn: False} en dicho archivo.   
 
 \section{Resultados y análisis}
 
@@ -201,5 +223,5 @@ Ajustar más aún las funcion de coste y el número  de episodios de entrenamien
 apra aproximarse al comportamiento que implementó el profesor. También pensar en
 aumentar la velocidad máxima del robot hasta sus propios límites físicos
 $[-100,100]$ o hasta que el simulador comience a dar errores.
-Explorar 
+Explorar, en general el espacio de hiperparámetros y ejecuciones de entrenamiento más largas. Estas cuestiones mejoraran el rendimiento de nuestro agente, pero, por el contrario no contribuirán a un mayor aprendizaje sobre la materia por lo que reconocemos que el tiempo que dedicamos a dichas tareas fue un compromiso entre el necesario para que Robobo mostrase un buen comportamiento y estar horas cambiando hiperparámetros para ver si mejora un poco más. 
 \end{document}
