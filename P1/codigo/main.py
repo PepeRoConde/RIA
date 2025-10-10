@@ -16,9 +16,11 @@ politica = config['politica']
 alpha1 = config['alpha1']
 alpha2 = config['alpha2']
 alpha3 = config['alpha3']
+alpha4 = config['alpha4']
 sigma = config['sigma']
 
 load_weights = config['load_weights']
+learn = config['learn']
 weights_load_path = config['weights_load_path']
 weights_save_base_path = config.get('weights_save_base_path', "model_weights")
 
@@ -41,14 +43,23 @@ else:
     modelo = SAC(politica, entorno)
 
 # Train model
-modelo.learn(total_timesteps=pasos_por_episodio * numero_episodios)
+if learn:
+    modelo.learn(total_timesteps=pasos_por_episodio * numero_episodios)
 
 # Save model with hyperparameter-based path
-save_name = f"sac_alpha1_{alpha1}_alpha2_{alpha2}_alpha3_{alpha3}_sigma_{sigma}_numeps{numero_episodios}.zip"
-save_path = os.path.join(weights_save_base_path, save_name)
-os.makedirs(weights_save_base_path, exist_ok=True)
-modelo.save(save_path)
-print(f"Model saved to {save_path}")
+    save_name = f"sac_alpha1_{alpha1}_alpha2_{alpha2}_alpha3_{alpha3}_sigma_{sigma}_numeps{numero_episodios}.zip"
+    save_path = os.path.join(weights_save_base_path, save_name)
+    os.makedirs(weights_save_base_path, exist_ok=True)
+    modelo.save(save_path)
+    print(f"Model saved to {save_path}")
+
+else:
+    
+    observacion = env.reset()
+    while True:
+        accion, _estados = modelo.predict(observacion)
+        observacion, recompensas, dones, info = entorno.step(action)
+        entorno.render()
 
 print(entorno.historial_xy_objeto)
 print(entorno.historial_xy_robot)
