@@ -21,6 +21,7 @@ sigma = config['sigma']
 
 load_weights = config['load_weights']
 learn = config['learn']
+check = config['check']
 weights_load_path = config['weights_load_path']
 weights_save_base_path = config.get('weights_save_base_path', "model_weights")
 
@@ -32,7 +33,9 @@ entorno = Entorno(
     alpha3=alpha3,
     sigma=sigma
 )
-check_env(entorno)
+
+if check: check_env(entorno)
+
 
 # Setup model
 if load_weights:
@@ -54,12 +57,11 @@ if learn:
     print(f"Model saved to {save_path}")
 
 else:
-    
-    observacion = env.reset()
-    while True:
-        accion, _estados = modelo.predict(observacion)
-        observacion, recompensas, dones, info = entorno.step(action)
-        entorno.render()
+    for episodio in range(numero_episodios): 
+        observacion, _  = entorno.reset()
+        for paso in range(pasos_por_episodio):
+            accion, _estados = modelo.predict(observacion)
+            observacion, recompensa, terminated, truncated, info = entorno.step(accion)
 
 print(entorno.historial_xy_objeto)
 print(entorno.historial_xy_robot)
