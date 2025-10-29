@@ -1,3 +1,5 @@
+# p1
+
 stable_baselines3
 pyyaml
 gymnasium
@@ -5,3 +7,8 @@ numpy
 robobopy
 robobosim
 scipy
+
+# p2
+
+neat-python
+graphviz
