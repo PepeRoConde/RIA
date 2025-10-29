@@ -180,6 +180,7 @@ recompensa obtenida, los flags de terminación y truncamiento, y un diccionario
 con información adicional del paso.
 
 \subsection{¿Cómo ejecutar?}
+\label{subsec:como}
 
 
 \begin{lstlisting}[language=bash]
@@ -215,13 +216,14 @@ los sensores infrarrojos.
 
 \section{Conclusiones}
 
-Si bien el robot no presenta un comportamiento tan bueno como la demo que presentó el profesor en clase, se considera que se puede demostrar que, efectivamente, ha aprendido un comportamiento más o menos inteligente. La función de coste efectivamente ha dirigido las acciones del robot hacia las deseadas, de forma más o menos rápida y, con el suficiente tiempo para experimentar, creemos que sería posible alcanzar un mejor comportamiento a base de prueba y error con los diferentes parámetros.
+Si bien el robot no presenta un comportamiento tan bueno como la demostración que presentó el profesor en clase, se puede demostrar que, efectivamente, ha aprendido un comportamiento más o menos inteligente. No teneis que creernos, podeis probarlo como se indica en \ref{subsec:como}. La función de coste efectivamente ha dirigido las acciones del robot hacia las deseadas, de forma más o menos rápida y, con el suficiente tiempo para experimentar, creemos que sería posible alcanzar un mejor comportamiento a base de prueba y error con los diferentes parámetros. No obstante, tal tarea no aporta a la calidad de la práctica. 
+
 Se observa cómo el robot rara vez consigue agarrar el objeto completamente pues parte de su función de recompensa consta del tamaño del blob, el cual disminuirá al encontrarse muy cerca del mismo, pues dejará de estar en su campo de visión. Una forma de arreglar este problema podría ser anular tal parte de la recompensa tras cierto tamaño de blob, e incluir como incentivo las activaciones del sensor IR delantero por ejemplo. Igualmente viendo las gráficas apreciamos cómo el robot busca siempre al blob y mantenerse cerca de el mismo.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.8\textwidth]{Figure_1.png}
-    \caption{Evolución de las recompensas en el último episodio de entrenamiento}
+    \includegraphics[width=0.8\textwidth]{histRecompensas.png}
+    \caption{Evolución de las recompensas en tres episodios de prueba}
     \label{fig:etiqueta}
 \end{figure}
 
