@@ -6,13 +6,6 @@ from Entorno import Entorno
 
 def evalua_genomas(genomes, config):
 
-    def vectoriza_observacion(obs):
-        return np.concatenate([
-            obs["blob_xy"],
-            obs["IR"],
-            obs["tamano_blob"],
-            obs["velocidad"]
-        ])
 
     def evalua_genoma(genoma, config, entorno):
         net = neat.nn.FeedForwardNetwork.create(genoma, config)
