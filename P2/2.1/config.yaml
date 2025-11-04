@@ -5,7 +5,7 @@ alpha2: 0.6
 alpha3: 0.0001
 alpha4: 0.1
 sigma: 35
-velocidad_blob: 50
+velocidad_blob: 1
 
 load_weights: True
 check: False 
