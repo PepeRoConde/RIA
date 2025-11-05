@@ -1,5 +1,35 @@
 import numpy as np
 import neat 
+import pickle
+import neat
+import os
+
+def guarda_genoma(genome, filename: str):
+
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    base, ext = os.path.splitext(filename)
+    counter = 2
+    new_filename = filename
+    
+    # Find a new filename if it already exists
+    while os.path.exists(new_filename):
+        new_filename = f"{base}_{counter}{ext}"
+        counter += 1
+    
+    with open(new_filename, "wb") as f:
+        pickle.dump(genome, f)
+    
+    print(f"Genoma guardado en: {new_filename}")
+
+def carga_genoma(filename: str, config: neat.Config):
+    with open(filename, "rb") as f:
+        genome = pickle.load(f)
+    
+    net = neat.nn.FeedForwardNetwork.create(genome, config)
+    print(f"Genoma cargado de: {filename}")
+    
+    return genome, net
+
 
 def vectoriza_observacion(obs):
     return np.concatenate([
@@ -26,5 +56,5 @@ def evalua_genoma(genoma, config, entorno):
         done = terminated or truncated
         paso += 1
 
-    print(f'Fitness {fitness}')
+    if entorno.verboso: print(f'Fitness {fitness}')
     return fitness

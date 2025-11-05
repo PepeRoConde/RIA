@@ -17,7 +17,9 @@ class Entorno(gym.Env):
                 alpha3 = 0.00001,
                 alpha4 = 0.1,
                 sigma = 15,
-                velocidad_blob = 20):
+                verboso = False,
+                velocidad_blob = 20,
+                posicion_inicial = None):
 
         self.pasos_por_episodio =  pasos_por_episodio
         self.alpha1 = alpha1
@@ -25,7 +27,9 @@ class Entorno(gym.Env):
         self.alpha3 = alpha3
         self.alpha4 = alpha4
         self.sigma = sigma
+        self.verboso = verboso
         self._velocidad_blob = velocidad_blob
+        self._posicion_inicial = posicion_inicial
 
         self.robocop = RoboboAPI.init_Robobo()
         self.robocop.connect()
@@ -89,7 +93,8 @@ class Entorno(gym.Env):
         """Nuevo episodio"""
         super().reset(seed=seed)
 
-        print('=======RESET')
+        
+        if self.verboso: print('=======RESET')
 
         # Guardar el episodio anterior en el historial total
         if self.recompensas_episodio:
@@ -121,6 +126,11 @@ class Entorno(gym.Env):
         observacion = self._get_observacion()
         info = self._get_info()
 
+        if self._posicion_inicial:
+            print(self._posicion_inicial)
+            RoboboAPI.mover_robobo_a_posicion(self, self._posicion_inicial['x'], self._posicion_inicial['y'], self._posicion_inicial['z'])
+
+
         return observacion, info
 
     def _get_recompensa(self):
@@ -131,13 +141,13 @@ class Entorno(gym.Env):
         x = self._blob_xy[0]
         d = RoboboAPI._distancia_a_blob(self)
         atras = self._IR[1]
-        print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
+        if self.verboso: print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
         return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + self.alpha4 * float(self._tamano_blob)
 
     def step(self, accion):
         """Ejecuta un instante"""
         
-        print(f'-- Paso #{self.numero_de_pasos}\n accion: {accion}')
+        if self.verboso: print(f'-- Paso #{self.numero_de_pasos}\n accion: {accion}')
         avance_recto, gire_derecha = accion[0], accion[1]
         dx = avance_recto + gire_derecha
         dy = avance_recto - gire_derecha
@@ -148,7 +158,7 @@ class Entorno(gym.Env):
         self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
         self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)
 
-        print(f"VELOCIDAD {self._velocidad}")
+        if self.verboso: print(f"VELOCIDAD {self._velocidad}")
 
         if self.numero_de_pasos == self.pasos_por_episodio:
             terminated, truncated = True, True
@@ -158,7 +168,7 @@ class Entorno(gym.Env):
         self.numero_de_pasos += 1
 
         recompensa = self._get_recompensa()
-        print(f'Recompensa: {recompensa}')
+        if self.verboso: print(f'Recompensa: {recompensa}')
         self.recompensas_episodio.append(recompensa)
         #print(self.recompensas_episodio)
         

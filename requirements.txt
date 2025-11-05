@@ -12,3 +12,4 @@ scipy
 
 neat-python
 graphviz
+tqdm

@@ -54,7 +54,7 @@ def _get_IR(Entorno):
         delante = irs["Front-C"]
         atras = irs["Back-C"]
         
-        print(f'delante {delante} atras {atras}')
+        if Entorno.verboso: print(f'delante {delante} atras {atras}')
 
         return np.array([delante, atras])
     else:
@@ -138,3 +138,11 @@ def mover_blob_random_walk(entorno, dx, dz):
     )
     
     return None
+
+def mover_robobo_a_posicion(entorno, x, y, z):
+    try:
+        entorno.sim.setRobotLocation(0, position={'x': x, 'y': y, 'z': z})
+        print(f"Robobo movido a la posición (x={x}, y={y}, z={z})")
+
+    except Exception as e:
+        print(f"Error al mover el robot: {e}")
