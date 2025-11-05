@@ -6,6 +6,7 @@ alpha4: 0.1
 sigma: 35
 verboso: False
 velocidad_blob: 0
+num_generaciones: 20
 posicion_inicial: null 
 #posicion_inicial: {'x': -1000.0, 'y': 39, 'z': -400.0 }
 guarda_genoma: True

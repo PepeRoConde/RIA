@@ -38,7 +38,7 @@ def evalua_genomas(genomes, config):
 
 
 poblacion = neat.Population(config)
-ganador = poblacion.run(evalua_genomas)
+ganador = poblacion.run(evalua_genomas, n=config_global['num_generaciones'])
 Plots.fitness(historial_fitness, config_global['pasos_por_episodio'])
 node_names=None # TODO: algo estilo  node_names = {-1: 'A', -2: 'B', 0: 'A XOR B'}
 Plots.draw_net(config, ganador, True, filename='P2/graficas/red', node_names=node_names)
