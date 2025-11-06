@@ -1,18 +1,71 @@
 import matplotlib.pyplot as plt
+import numpy as np
 import graphviz
+import os
 
-def fitness(fitness, pasos_por_episodio):
+def fitness_individuos(generaciones, nombre_figura=None):
+    fitness = np.concatenate(generaciones)
+    pasos_por_episodio = [len(g) for g in generaciones]  # population sizes per generation
+    poblacion_promedio = int(np.mean(pasos_por_episodio))
+
     plt.figure(figsize=(12, 5))
-    plt.plot(fitness, label='fitness')
+    plt.plot(fitness, label='Fitness', color='blue')
 
-    for step in range(pasos_por_episodio, len(fitness), pasos_por_episodio):
+    step = 0
+    for n in pasos_por_episodio[:-1]:
+        step += n
         plt.axvline(x=step, color='gray', linestyle='--', linewidth=0.5)
 
-    plt.xlabel("Individuo poblacion")
+    plt.xlabel("Individuo (a lo largo de todas las generaciones)")
     plt.ylabel("Fitness")
+    plt.title("Fitness de Individuos (por generación)")
+    plt.legend()
     plt.grid(True)
-    plt.show()
 
+    if nombre_figura:
+        os.makedirs(os.path.dirname(nombre_figura), exist_ok=True)
+        if not nombre_figura.endswith('.png'):
+            nombre_figura += '.png'
+        plt.savefig(nombre_figura, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Figura guardada en {nombre_figura}")
+    else:
+        plt.show()
+
+def fitness_generaciones(generaciones, nombre_figura=None):
+    mean_fit = [np.mean(g) for g in generaciones]
+    max_fit = [np.max(g) for g in generaciones]
+    min_fit = [np.min(g) for g in generaciones]
+    std_fit = [np.std(g) for g in generaciones]
+
+    gens = np.arange(1, len(generaciones) + 1)
+
+    plt.figure(figsize=(12, 6))
+    plt.plot(gens, mean_fit, label='Mean Fitness', color='blue', linewidth=2)
+    plt.plot(gens, max_fit, label='Max Fitness', color='green', linestyle='--')
+    plt.plot(gens, min_fit, label='Min Fitness', color='red', linestyle='--')
+
+    plt.fill_between(gens,
+                     np.array(mean_fit) - np.array(std_fit),
+                     np.array(mean_fit) + np.array(std_fit),
+                     color='blue', alpha=0.2, label='Mean ± 1 STD')
+
+    plt.title("Fitness por Generación")
+    plt.xlabel("Generación")
+    plt.ylabel("Fitness")
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    if nombre_figura:
+        os.makedirs(os.path.dirname(nombre_figura), exist_ok=True)
+        if not nombre_figura.endswith('.png'):
+            nombre_figura += '.png'
+        plt.savefig(nombre_figura, dpi=300, bbox_inches='tight')
+        plt.close()
+        print(f"Figura guardada en {nombre_figura}")
+    else:
+        plt.show()
 # fusilado de https://github.com/CodeReclaimers/neat-python/blob/master/examples/xor/visualize.py
 def draw_net(config, genome, view=False, filename=None, node_names=None, show_disabled=True, prune_unused=False,
              node_colors=None, fmt='svg'):

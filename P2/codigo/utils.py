@@ -20,6 +20,8 @@ def guarda_genoma(genome, filename: str):
         pickle.dump(genome, f)
     
     print(f"Genoma guardado en: {new_filename}")
+    
+    return os.path.splitext(os.path.basename(new_filename))[0]
 
 def carga_genoma(filename: str, config: neat.Config):
     with open(filename, "rb") as f:
