@@ -1,4 +1,4 @@
-pasos_por_episodio: 40
+pasos_por_episodio: 50
 alpha1: 2.5
 alpha2: 0.6
 alpha3: 0.0001
@@ -6,7 +6,7 @@ alpha4: 0.1
 sigma: 35
 verboso: False
 velocidad_blob: 0
-num_generaciones: 20
+num_generaciones: 10
 posicion_inicial: null 
 #posicion_inicial: {'x': -1000.0, 'y': 39, 'z': -400.0 }
 guarda_genoma: True
