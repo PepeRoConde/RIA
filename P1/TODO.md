@@ -1,3 +1,16 @@
+
+# cosas inmediatas que se me van ocurriendo
+- [ ] Añadir sensores IR
+- [ ] Desglosar todo lo relacionado con robobo en un archivo aparte, que haga de API
+- [ ] Representación interna entre 0 y 1
+- [ ] (Probar) función de recompensa centr times d + d
+- [ ] Cambiar modelo desde la linea de comandos
+
+
+---
+
+# enunciado de la practica
+
 - [ ] Definición del problema e implementación de los elementos básicos: **(hasta 4 puntos)**:
     - [ ] Implementación del entorno de trabajo de RobobSim adaptado a Gymnasium.
     - [ ] Definición y complejidad de los espacios de estados, de acciones y función de recompensa. Cuanto mayor sea la complejidad y definición de los mismos, mayor será la puntuación. Ejemplo: la utilización de espacios continuos frente a espacios discretos es más compleja, pero se valorará más.

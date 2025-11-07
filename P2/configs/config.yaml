@@ -1,0 +1,13 @@
+pasos_por_episodio: 15
+alpha1: 10.0
+alpha2: 20.0
+alpha3: 5.0
+alpha4: 2.0
+sigma: 1000
+verboso: True
+velocidad_blob: 0
+num_generaciones: 10
+posicion_inicial: null 
+#posicion_inicial: {'x': -1000.0, 'y': 39, 'z': -400.0 }
+guarda_genoma: True
+genoma_archivo: "P2/genomas/genoma_3.pkl"
