@@ -198,10 +198,13 @@ class Entorno(gym.Env):
         if error_centrado < 15 and delante > 300:
             bonus = 50  
         
+
+        d = RoboboAPI._distancia_a_blob(self)
+
         if self.verboso:
             print(f'centrado: {recompensa_centrado:.1f}, tamaño: {recompensa_tamano:.1f}, '
                 f'IR_delante: {recompensa_IR:.1f} (valor={delante}), atras: {penalizacion_atras}, '
-                f'perdido: {penalizacion_perdido}, combo: {bonus}')
+                  f'perdido: {penalizacion_perdido}, distancia: {self.alpha2 * math.exp(-(d/self.sigma)**2)}, combo: {bonus}')
         
         recompensa = (
             recompensa_centrado +
@@ -209,6 +212,7 @@ class Entorno(gym.Env):
             recompensa_IR +
             penalizacion_atras +
             penalizacion_perdido +
+            self.alpha2 * math.exp(-(d/self.sigma)**2) +
             bonus
         )
         
