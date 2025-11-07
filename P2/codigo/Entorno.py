@@ -191,7 +191,7 @@ class Entorno(gym.Env):
             penalizacion_paredes += (atras - 100) * 0.3
 
         # 5. PENALIZACIÓN por perder el blob de vista
-        penalizacion_perdido = -100 if x == -1 else 0
+        penalizacion_perdido = -500 if x == -1 else 0
         
         # 6. BONUS : si está centrado Y con IR alto = éxito
         bonus = 0
