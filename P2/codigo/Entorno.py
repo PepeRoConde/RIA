@@ -16,6 +16,8 @@ class Entorno(gym.Env):
                 alpha2 = 0.5,
                 alpha3 = 0.00001,
                 alpha4 = 0.1,
+                alpha5 = 3,
+                alpha6 = 5,
                 sigma = 15,
                 verboso = False,
                 velocidad_blob = 20,
@@ -26,6 +28,8 @@ class Entorno(gym.Env):
         self.alpha2 = alpha2
         self.alpha3 = alpha3
         self.alpha4 = alpha4
+        self.alpha5 = alpha5
+        self.alpha6 = alpha6
         self.sigma = sigma
         self.verboso = verboso
         self._velocidad_blob = velocidad_blob
@@ -35,9 +39,9 @@ class Entorno(gym.Env):
         self.robocop.connect()
         self.sim = RoboboAPI.init_RoboboSim()
         self.sim.connect()
-
-        self.velocidad_min = -2
-        self.velocidad_max = 2
+        self.sim.wait(1)
+        self.velocidad_min = -15
+        self.velocidad_max = 15
 
         # Historial total con sublistas por episodio
         self.historial_recompensas = []  # Lista de listas
@@ -135,15 +139,80 @@ class Entorno(gym.Env):
 
     def _get_recompensa(self):
         """
-        Método auxiliar para devolver la recompensa a partir de los atributos de la clase
+        Recompensa enfocada en: centrar blob + acercarse usando IR + evitar colisiones
         """
-
         x = self._blob_xy[0]
-        d = RoboboAPI._distancia_a_blob(self)
+        tamano = float(self._tamano_blob)
         atras = self._IR[1]
-        if self.verboso: print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
-        return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + self.alpha4 * float(self._tamano_blob)
+        delante = self._IR[0]
+        ll = self._IR[2]  # Lateral izquierda exterior
+        l = self._IR[3]   # Lateral izquierda interior
+        rr = self._IR[4]  # Lateral derecha exterior
+        r = self._IR[5] 
+        # 1. CENTRADO (crítico para mantener el blob en vista)
+        error_centrado = abs(x - 50)
+        if error_centrado < 10:
+            recompensa_centrado = 20
+        elif error_centrado < 25:
+            recompensa_centrado = 10
+        else:
+            recompensa_centrado = -5
+        
+        # 2. TAMAÑO DEL BLOB (indica proximidad visual)
+        recompensa_tamano = tamano * 0.1
+        
+        # 3. IR DELANTERO (recompensa progresiva por acercarse)
+        if delante > 500:  # Muy muy cerca del blob
+            recompensa_IR = 100
+        elif delante > 300:  # Muy cerca
+            recompensa_IR = 50
+        elif delante > 200:  # Cerca
+            recompensa_IR = 25
+        elif delante > 100:  # Detectando algo adelante
+            recompensa_IR = 10
+        else:  # Nada adelante
+            recompensa_IR = 0
+        
+        # 4. PENALIZACIÓN POR COLISIÓN TRASERA
+        penalizacion_atras = -20 if atras > 100 else 0
+        
 
+        penalizacion_paredes = 0
+    
+        if ll > 100:  # Pared lateral izquierda externa cercana
+            penalizacion_paredes += (ll - 100) * 0.15
+        if l > 100:   # Pared lateral izquierda interna cercana (más crítica)
+            penalizacion_paredes += (l - 100) * 0.25
+        if rr > 100:  # Pared lateral derecha externa cercana
+            penalizacion_paredes += (rr - 100) * 0.15
+        if r > 100:   # Pared lateral derecha interna cercana (más crítica)
+            penalizacion_paredes += (r - 100) * 0.25
+        if atras > 100:  # Pared trasera
+            penalizacion_paredes += (atras - 100) * 0.3
+
+        # 5. PENALIZACIÓN por perder el blob de vista
+        penalizacion_perdido = -100 if x == -1 else 0
+        
+        # 6. BONUS : si está centrado Y con IR alto = éxito
+        bonus = 0
+        if error_centrado < 15 and delante > 300:
+            bonus = 50  
+        
+        if self.verboso:
+            print(f'centrado: {recompensa_centrado:.1f}, tamaño: {recompensa_tamano:.1f}, '
+                f'IR_delante: {recompensa_IR:.1f} (valor={delante}), atras: {penalizacion_atras}, '
+                f'perdido: {penalizacion_perdido}, combo: {bonus}')
+        
+        recompensa = (
+            recompensa_centrado +
+            recompensa_tamano +
+            recompensa_IR +
+            penalizacion_atras +
+            penalizacion_perdido +
+            bonus
+        )
+        
+        return recompensa
     def step(self, accion):
         """Ejecuta un instante"""
         

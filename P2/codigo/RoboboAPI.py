@@ -53,12 +53,15 @@ def _get_IR(Entorno):
     if irs != []:
         delante = irs["Front-C"]
         atras = irs["Back-C"]
-        
+        r = irs["Front-R"]
+        rr = irs["Front-RR"]
+        l = irs["Front-L"]
+        ll = irs["Front-LL"]
         if Entorno.verboso: print(f'delante {delante} atras {atras}')
 
-        return np.array([delante, atras])
+        return np.array([delante, atras, ll, l , r , rr])
     else:
-        return np.array([0, 0])
+        return np.array([0, 0,0,0,0,0])
 
 def _get_tamano_blob(Entorno):
     """
