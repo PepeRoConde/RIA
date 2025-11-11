@@ -1,0 +1,2 @@
+- usar YOLO
+- usar la política de la práctica 1
