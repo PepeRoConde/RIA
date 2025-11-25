@@ -15,3 +15,11 @@ def esta_viendo(observacion):
    print(f'x: {x}')
    if x == -1 or x == 101 or x == 0: return False
    else: return True
+
+def muestra(frame_anotado, posicion):
+    cv2.putText(frame_anotado, f"Posición: {posicion}",
+      (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.3,
+      (0, 255, 255), 3)
+    
+    cv2.imshow("YOLO - Control Robobo", frame_anotado)
+    cv2.waitKey(1)  # Add this!
