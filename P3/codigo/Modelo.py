@@ -1,8 +1,8 @@
-from utils import carga_politica, carga_modelo
+from utils import carga_politica, carga_modelo_telecontrol
 
 class Modelo:
     def __init__(self, ruta_politica, entorno):
-        self.modelo =  carga_modelo()
+        self.modelo_telecontrol =  carga_modelo_telecontrol()
         self.politica = carga_politica(ruta_politica, entorno)
 
     def predict(self, observacion):

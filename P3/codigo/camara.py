@@ -32,7 +32,7 @@ class Camara:
             time.sleep(0.01)  # Reduce CPU usage
 
     def get_frame(self):
-        return self.frame
+        return cv2.resize(cv2.flip(self.frame, 1), (640, 480)) 
 
     def stop(self):
         self.running = False

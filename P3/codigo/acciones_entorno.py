@@ -1,11 +1,15 @@
 import yaml 
 import numpy as np
+from vision import detectar_posicion_brazos 
+import cv2
+
+from utils import carga_modelo_YOLO
 
 with open("P3/configs/config.yaml", "r") as file:
     config = yaml.safe_load(file)
 
 
-class AccionesEntorno:
+class ModeloTelecontrol:
     """
     Convierte acciones hardcoded a arrays compatibles con Entorno.step()
     
@@ -24,7 +28,8 @@ class AccionesEntorno:
         # Normalizar velocidad al rango [-2, 2] del action_space
         # Asumiendo que velocidad en config es 0-20, normalizamos a -2, 2
         self.factor_normalizacion = 2.0 / 20.0
-    
+        self.YOLO = carga_modelo_YOLO()
+
     def _normalizar_velocidad(self, vel):
         """Convierte velocidad del rango del robot al rango del entorno"""
         return vel * self.factor_normalizacion
@@ -104,7 +109,26 @@ class AccionesEntorno:
         """
         return np.array([0.0, 0.0], dtype=np.float32)
 
-    def predict(self, posicion):
+    def predict(self, frame):
+
+
+        resultados = self.YOLO(frame)
+        frame_anotado = resultados[0].plot()
+        keypoint = resultados[0].keypoints.xy.cpu().numpy()[0]
+
+        posicion = detectar_posicion_brazos(keypoint)
+        #print(f'posicion: {posicion} || accion: {acciones_ent.predict(posicion)}')
+
+        
+        cv2.putText(frame_anotado, f"Posición: {posicion}",
+          (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.3,
+          (0, 255, 255), 3)
+
+        cv2.imshow("YOLO - Control Robobo", frame_anotado)
+
+        #if cv2.waitKey(1) & 0xFF == ord('q'):
+        #    break
+
         if posicion == "BRAZO DERECHO":
             return self.derecha()
     
@@ -131,4 +155,4 @@ def get_acciones_entorno(velocidad_base=None):
         AccionesEntorno: Instancia lista para usar
     """
 
-    return AccionesEntorno(velocidad_base=velocidad_base)
+    return ModeloTelecontrol(velocidad_base=velocidad_base)
