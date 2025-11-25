@@ -7,9 +7,11 @@ def carga_politica(politica_ruta, entorno):
     print(f"Modelo cargado de {politica_ruta}")
     return modelo
 
-def carga_modelo_telecontrol():
-    return YOLO('yolov8n-pose.pt')
-
 def carga_modelo_YOLO():
     return YOLO('yolov8n-pose.pt')
 
+def esta_viendo(observacion):
+   x, y = observacion['blob_xy'][0], observacion['blob_xy'][1] 
+   print(f'x: {x}')
+   if x == -1 or x == 101 or x == 0: return False
+   else: return True

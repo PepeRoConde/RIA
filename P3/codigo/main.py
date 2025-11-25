@@ -2,11 +2,11 @@ import cv2
 import yaml
 
 from acciones import get_acciones
-from acciones_entorno import get_acciones_entorno
-from vision import detectar_posicion_brazos
+from ModeloTelecontrol import carga_modelo_telecontrol
 from camara import Camara
 from utils import carga_politica
 from Entorno import Entorno 
+from Modelo import Modelo
 
 ###
 
@@ -24,25 +24,18 @@ ruta_politica = config['ruta_politica']
 ###
 
 acciones = get_acciones()
-ModeloTelecontrol = get_acciones_entorno() 
 camara = Camara()
 entorno = Entorno(pasos_por_episodio=pasos_por_episodio,
     alpha1=alpha1, alpha2=alpha2, alpha3=alpha3, sigma=sigma)
-
-politica_p1 = carga_politica(ruta_politica, entorno)
-
+modelo = Modelo(ruta_politica, entorno)
 
 observacion, _  = entorno.reset()
-for paso in range(pasos_por_episodio):
+#for paso in range(pasos_por_episodio):
+while True:
     frame = camara.get_frame()
-    accion = ModeloTelecontrol.predict(frame) 
+    if frame is None: continue
+    accion = modelo.predict(frame, observacion) 
     observacion, recompensa, terminated, truncated, info = entorno.step(accion)
-
-
-    
-    print()
-
-    
 
     '''
     resultados = modelo(frame)

@@ -1,12 +1,14 @@
-from utils import carga_politica, carga_modelo_telecontrol
-
+from utils import carga_politica, esta_viendo
+from ModeloTelecontrol import carga_modelo_telecontrol
 class Modelo:
     def __init__(self, ruta_politica, entorno):
-        self.modelo_telecontrol =  carga_modelo_telecontrol()
+        self.modelo_telecontrol = carga_modelo_telecontrol() 
         self.politica = carga_politica(ruta_politica, entorno)
 
-    def predict(self, observacion):
-        if # lo esta vien
-            return self.politica.predict(observacion)
+    def predict(self, frame, observacion):
+        if esta_viendo(observacion):
+            print('politica')
+            return self.politica.predict(observacion)[0]
         else:
-            return self.modelo.predict(observacion)
+            print('telecontrol')
+            return self.modelo_telecontrol.predict(frame)
