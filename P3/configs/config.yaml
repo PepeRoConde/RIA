@@ -8,3 +8,30 @@ alpha3: 5.0
 alpha4: 2.0
 sigma: 1000
 verboso: True
+
+telecontrol:
+  # Velocidad base para movimientos (0-20)
+  velocidad_base: 20
+  # Factor de normalización para convertir velocidad a rango [-2, 2]
+  factor_normalizacion: 0.1  # 2.0 / 20.0
+  # Umbrales para detección de gestos (relativos al ancho de hombros)
+  deteccion_gestos:
+    # Multiplicador para considerar brazo levantado (altura muñeca < hombro - umbral * ancho_hombros)
+    umbral_brazo_arriba: 0.5
+    # Multiplicador para considerar brazo bajado (altura muñeca > hombro + umbral * ancho_hombros)
+    umbral_brazo_abajo: 1.0
+    # Umbral para detectar manos juntas (distancia < umbral * ancho_hombros)
+    umbral_manos_juntas: 0.5
+    # Umbral para detectar brazos separados/en cruz (distancia > umbral * ancho_hombros)
+    umbral_brazos_separados: 1.5
+    # Umbral para altura similar de las manos (abs(altura_izq - altura_der) < umbral * ancho_hombros)
+    umbral_manos_nivel: 0.2
+    # Umbral para manos muy juntas al pecho
+    umbral_manos_pecho: 0.3
+  # Ratios de velocidad para cada movimiento (0.0 a 1.0)
+  # Estos se multiplican por velocidad_base
+  ratios_movimiento:
+    ratio_avance_giro: 0.5   # Para giros: cuánto avanza mientras gira
+    ratio_rotacion_giro: 0.5  # Para giros: cuánto gira
+    ratio_adelante: 1.0        # Avance recto
+    ratio_atras: 1.0       # Retroceso
