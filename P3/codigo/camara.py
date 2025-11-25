@@ -23,16 +23,21 @@ class Camara:
         # Start background capture thread
         self.thread = threading.Thread(target=self.update, daemon=True)
         self.thread.start()
+        self.lock = threading.Lock()
 
     def update(self):
         while self.running:
             ret, frame = self.cap.read()
             if ret:
-                self.frame = frame
-            time.sleep(0.01)  # Reduce CPU usage
-
+                with self.lock:
+                    self.frame = frame
+            time.sleep(0.01)
+    
     def get_frame(self):
-        return cv2.resize(cv2.flip(self.frame, 1), (640, 480)) 
+        with self.lock:
+            if self.frame is None:
+                return None
+            return cv2.resize(cv2.flip(self.frame, 1), (640, 480))
 
     def stop(self):
         self.running = False
