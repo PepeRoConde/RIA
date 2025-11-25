@@ -2,6 +2,7 @@ import cv2
 import yaml
 
 from acciones import get_acciones
+from acciones_entorno import get_acciones_entorno
 from vision import detectar_posicion_brazos, ejecutar_accion_robot
 from camara import Camara
 from utils import carga_politica, carga_modelo
@@ -23,6 +24,7 @@ ruta_politica = config['ruta_politica']
 ###
 
 acciones = get_acciones()
+acciones_ent = get_acciones_entorno() 
 modelo = carga_modelo()
 camara = Camara()
 entorno = Entorno(pasos_por_episodio=pasos_por_episodio,

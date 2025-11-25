@@ -1,0 +1,118 @@
+import yaml 
+import numpy as np
+
+with open("P3/configs/config.yaml", "r") as file:
+    config = yaml.safe_load(file)
+
+
+class AccionesEntorno:
+    """
+    Convierte acciones hardcoded a arrays compatibles con Entorno.step()
+    
+    El espacio de acciones de Entorno es Box[-2, 2] con shape=(2,)
+    donde accion = [avance_recto, gire_derecha]
+    
+    En step():
+    - dx = avance_recto + gire_derecha  (rueda izquierda)
+    - dy = avance_recto - gire_derecha  (rueda derecha)
+    """
+    
+    def __init__(self, velocidad_base=None):
+        # Usa velocidad del config si no se especifica
+        self.velocidad_base = velocidad_base or config.get('velocidad', 10)
+        
+        # Normalizar velocidad al rango [-2, 2] del action_space
+        # Asumiendo que velocidad en config es 0-20, normalizamos a -2, 2
+        self.factor_normalizacion = 2.0 / 20.0
+    
+    def _normalizar_velocidad(self, vel):
+        """Convierte velocidad del rango del robot al rango del entorno"""
+        return vel * self.factor_normalizacion
+    
+    def derecha(self, velocidad=None):
+        """
+        Girar a la derecha: rueda izquierda avanza, derecha quieta
+        moveWheelsByTime(0, velocidad, tiempo) → queremos dy=0, dx=velocidad
+        
+        dx = avance_recto + gire_derecha = velocidad
+        dy = avance_recto - gire_derecha = 0
+        
+        → avance_recto = velocidad/2, gire_derecha = velocidad/2
+        """
+        vel = velocidad or self.velocidad_base
+        vel_norm = self._normalizar_velocidad(vel)
+        
+        avance_recto = vel_norm / 2
+        gire_derecha = vel_norm / 2
+        
+        return np.array([avance_recto, gire_derecha], dtype=np.float32)
+    
+    def izquierda(self, velocidad=None):
+        """
+        Girar a la izquierda: rueda izquierda quieta, derecha avanza
+        moveWheelsByTime(velocidad, 0, tiempo) → queremos dx=0, dy=velocidad
+        
+        dx = avance_recto + gire_derecha = 0
+        dy = avance_recto - gire_derecha = velocidad
+        
+        → avance_recto = velocidad/2, gire_derecha = -velocidad/2
+        """
+        vel = velocidad or self.velocidad_base
+        vel_norm = self._normalizar_velocidad(vel)
+        
+        avance_recto = vel_norm / 2
+        gire_derecha = -vel_norm / 2
+        
+        return np.array([avance_recto, gire_derecha], dtype=np.float32)
+    
+    def adelante(self, velocidad=None):
+        """
+        Avanzar recto: ambas ruedas a la misma velocidad
+        moveWheelsByTime(velocidad, velocidad, tiempo) → dx=dy=velocidad
+        
+        dx = avance_recto + gire_derecha = velocidad
+        dy = avance_recto - gire_derecha = velocidad
+        
+        → avance_recto = velocidad, gire_derecha = 0
+        """
+        vel = velocidad or self.velocidad_base
+        vel_norm = self._normalizar_velocidad(vel)
+        
+        avance_recto = vel_norm
+        gire_derecha = 0.0
+        
+        return np.array([avance_recto, gire_derecha], dtype=np.float32)
+    
+    def atras(self, velocidad=None):
+        """
+        Retroceder: ambas ruedas a velocidad negativa
+        moveWheelsByTime(-velocidad, -velocidad, tiempo) → dx=dy=-velocidad
+        
+        → avance_recto = -velocidad, gire_derecha = 0
+        """
+        vel = velocidad or self.velocidad_base
+        vel_norm = self._normalizar_velocidad(vel)
+        
+        avance_recto = -vel_norm
+        gire_derecha = 0.0
+        
+        return np.array([avance_recto, gire_derecha], dtype=np.float32)
+    
+    def quieto(self):
+        """
+        Detener: no aplicar ningún cambio de velocidad
+        """
+        return np.array([0.0, 0.0], dtype=np.float32)
+
+
+def get_acciones_entorno(velocidad_base=None):
+    """
+    Factory function para crear instancia de AccionesEntorno
+    
+    Args:
+        velocidad_base: Velocidad base opcional. Si no se proporciona, usa config
+    
+    Returns:
+        AccionesEntorno: Instancia lista para usar
+    """
+    return AccionesEntorno(velocidad_base=velocidad_base)
