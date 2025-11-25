@@ -1,2 +1,10 @@
 velocidad: 20
 tiempo: 0.04
+ruta_politica: P3/politicas/politica_01
+pasos_por_episodio: 15
+alpha1: 10.0
+alpha2: 20.0
+alpha3: 5.0
+alpha4: 2.0
+sigma: 1000
+verboso: True

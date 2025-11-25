@@ -26,7 +26,7 @@ class AccionesRobobo:
         self.robobo.stopMotors()
 
 
-def crear_robot():
+def get_acciones():
     robocop = Robobo("localhost")
     robocop.connect()
 

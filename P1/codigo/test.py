@@ -6,17 +6,10 @@ from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
 import math
 
-
-
-
-
-
-
 robocop = Robobo("localhost")
 robocop.connect()
 sim = RoboboSim("localhost")
 sim.connect()
-
 
 objetos = sim.getObjects()
 if objetos != None and len(objetos) ==1 :

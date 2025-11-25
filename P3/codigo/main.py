@@ -1,57 +1,61 @@
 import cv2
-from ultralytics import YOLO
+import yaml
 
-from acciones import crear_robot
+from acciones import get_acciones
 from vision import detectar_posicion_brazos, ejecutar_accion_robot
-from camara import Camera
+from camara import Camara
+from utils import carga_politica, carga_modelo
+from Entorno import Entorno 
 
-# Cargar YOLO 
-model = YOLO('yolov8n-pose.pt')
+###
 
-# Inicializar robot
-acciones = crear_robot()
+with open("P3/configs/config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
-# Inicializar cámara en hilo
-cam = Camera()
+pasos_por_episodio = config['pasos_por_episodio']
+alpha1 = config['alpha1']
+alpha2 = config['alpha2']
+alpha3 = config['alpha3']
+alpha4 = config['alpha4']
+sigma = config['sigma']
+ruta_politica = config['ruta_politica']
+
+###
+
+acciones = get_acciones()
+modelo = carga_modelo()
+camara = Camara()
+entorno = Entorno(pasos_por_episodio=pasos_por_episodio,
+    alpha1=alpha1, alpha2=alpha2, alpha3=alpha3, sigma=sigma)
+
+politica_p1 = carga_politica(ruta_politica, entorno)
+
+ha_visto_blob = False
 
 print("Presiona 'q' para salir")
 
-while True:
-    frame = cam.get_frame()
-    if frame is None:
-        continue
+while not ha_visto_blob:
 
-    # Voltear imagen
-    frame = cv2.flip(frame, 1)
+    frame = cv2.resize(cv2.flip(camara.get_frame(), 1), (640, 480))
+    resultados = modelo(frame)
+    frame_anotado = resultados[0].plot()
 
-    # Reducir resolución para más FPS
-    frame_small = cv2.resize(frame, (640, 480))
-
-    # Procesar YOLO
-    results = model(frame_small, verbose=False)
-
-    # Copia del frame para dibujar
-    annotated_frame = results[0].plot()
-
-    for result in results:
-        if result.keypoints is not None:
-            keypoints = result.keypoints.xy.cpu().numpy()
+    for resultado in resultados:
+        if resultado.keypoints is not None:
+            keypoints = resultado.keypoints.xy.cpu().numpy()
 
             for person_keypoints in keypoints:
+
                 posicion = detectar_posicion_brazos(person_keypoints)
-
-                # Ejecutar acción del robot
                 ejecutar_accion_robot(posicion, acciones)
-
-                # Mostrar texto
-                cv2.putText(annotated_frame, f"Posición: {posicion}",
+                cv2.putText(frame_anotado, f"Posición: {posicion}",
                             (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.3,
                             (0, 255, 255), 3)
 
-    cv2.imshow("YOLO - Control Robobo", annotated_frame)
+    cv2.imshow("YOLO - Control Robobo", frame_anotado)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
-cam.stop()
+camara.stop()
 cv2.destroyAllWindows()
