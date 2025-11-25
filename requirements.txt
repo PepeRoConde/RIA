@@ -13,3 +13,7 @@ scipy
 neat-python
 graphviz
 tqdm
+
+#p3
+ultralytics
+opencv-python
