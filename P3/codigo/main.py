@@ -3,7 +3,7 @@ import yaml
 
 from acciones import get_acciones
 from acciones_entorno import get_acciones_entorno
-from vision import detectar_posicion_brazos, ejecutar_accion_robot
+from vision import detectar_posicion_brazos
 from camara import Camara
 from utils import carga_politica, carga_modelo
 from Entorno import Entorno 
@@ -34,6 +34,7 @@ politica_p1 = carga_politica(ruta_politica, entorno)
 
 ha_visto_blob = False
 
+print(f'{acciones_ent.derecha()} ')
 print("Presiona 'q' para salir")
 
 while not ha_visto_blob:
@@ -41,7 +42,7 @@ while not ha_visto_blob:
     frame = cv2.resize(cv2.flip(camara.get_frame(), 1), (640, 480))
     resultados = modelo(frame)
     frame_anotado = resultados[0].plot()
-
+    print('len ',len(resultados))
     for resultado in resultados:
         if resultado.keypoints is not None:
             keypoints = resultado.keypoints.xy.cpu().numpy()
@@ -49,7 +50,7 @@ while not ha_visto_blob:
             for person_keypoints in keypoints:
 
                 posicion = detectar_posicion_brazos(person_keypoints)
-                ejecutar_accion_robot(posicion, acciones)
+                print(f'posicion: {posicion} || accion: {acciones_ent.predict(posicion)}')
                 cv2.putText(frame_anotado, f"Posición: {posicion}",
                             (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.3,
                             (0, 255, 255), 3)

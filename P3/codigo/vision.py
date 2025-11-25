@@ -51,18 +51,3 @@ def detectar_posicion_brazos(keypoints):
     
     return "BRAZOS RELAJADOS"
 
-def ejecutar_accion_robot(posicion, acciones):
-    if posicion == "BRAZO DERECHO":
-        acciones.derecha()
-
-    elif posicion == "BRAZO IZQUIERDO":
-        acciones.izquierda()
-
-    elif posicion == "BRAZOS RELAJADOS, MANOS JUNTAS ARRIBA":
-        acciones.adelante()
-
-    elif posicion == "MANOS JUNTAS PECHO":
-        acciones.atras()
-
-    elif posicion in ("BRAZOS EN CRUZ"):
-        acciones.quieto()

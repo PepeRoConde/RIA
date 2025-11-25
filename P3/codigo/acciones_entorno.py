@@ -19,7 +19,7 @@ class AccionesEntorno:
     
     def __init__(self, velocidad_base=None):
         # Usa velocidad del config si no se especifica
-        self.velocidad_base = velocidad_base or config.get('velocidad', 10)
+        self.velocidad_base = velocidad_base or config['velocidad']
         
         # Normalizar velocidad al rango [-2, 2] del action_space
         # Asumiendo que velocidad en config es 0-20, normalizamos a -2, 2
@@ -104,6 +104,21 @@ class AccionesEntorno:
         """
         return np.array([0.0, 0.0], dtype=np.float32)
 
+    def predict(self, posicion):
+        if posicion == "BRAZO DERECHO":
+            return self.derecha()
+    
+        elif posicion == "BRAZO IZQUIERDO":
+            return self.izquierda()
+    
+        elif posicion == "BRAZOS RELAJADOS" or posicion == "MANOS JUNTAS ARRIBA":
+            return self.adelante()
+    
+        elif posicion == "MANOS JUNTAS PECHO":
+            return self.atras()
+    
+        elif posicion in ("BRAZOS EN CRUZ"):
+            return self.quieto()
 
 def get_acciones_entorno(velocidad_base=None):
     """
@@ -115,4 +130,5 @@ def get_acciones_entorno(velocidad_base=None):
     Returns:
         AccionesEntorno: Instancia lista para usar
     """
+
     return AccionesEntorno(velocidad_base=velocidad_base)
