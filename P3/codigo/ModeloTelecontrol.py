@@ -170,7 +170,7 @@ class ModeloTelecontrol:
         """
         resultados = self.YOLO(frame, verbose=False)
         frame_anotado = resultados[0].plot()
-        keypoint = resultados[0].keypoints.xy.cpu().numpy()[0]
+        keypoint = resultados[0].keypoints.xy.cpu().numpy()
         posicion = self.detectar_posicion_brazos(keypoint)
         muestra(frame_anotado, posicion) 
 

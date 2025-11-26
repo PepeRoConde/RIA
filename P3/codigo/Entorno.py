@@ -8,8 +8,6 @@ import RoboboAPI
 from ui import ui
 
 
-# https://gymnasium.farama.org/introduction/create_custom_env/
-# https://gymnasium.farama.org/api/spaces/
 class Entorno(gym.Env):
 
     def __init__(self, 
@@ -20,9 +18,12 @@ class Entorno(gym.Env):
                 alpha4 = 0.1,
                 sigma = 15,
                 velocidad_blob = 20,
-                mundo_real = False):
+                mundo_real = False,
+                camara = None,  # Nueva: referencia a la cámara
+                clase_objeto = 'bottle',  # Nueva: qué objeto detectar
+                visualizar_detecciones = True):  # Nueva: mostrar detecciones
 
-        self.pasos_por_episodio =  pasos_por_episodio
+        self.pasos_por_episodio = pasos_por_episodio
         self.alpha1 = alpha1
         self.alpha2 = alpha2
         self.alpha3 = alpha3
@@ -30,26 +31,50 @@ class Entorno(gym.Env):
         self.sigma = sigma
         self._velocidad_blob = velocidad_blob
         self.mundo_real = mundo_real
+        self.visualizar_detecciones = visualizar_detecciones
+
+        # Inicializar sensor de objeto si estamos en mundo real
+        if self.mundo_real:
+            if camara is None:
+                raise ValueError("Se requiere una cámara para mundo_real=True")
+            
+            self.camara = camara
+            
+            # Inicializar el sensor de objeto basado en cámara
+            from SensorObjeto import SensorObjeto
+            self.sensor_objeto = SensorObjeto(
+                modelo_yolo='yolov8n.pt',  # o el modelo que prefieras
+                clase_objetivo=clase_objeto
+            )
+            print(f"[Entorno] Modo MUNDO REAL: usando cámara para detectar '{clase_objeto}'")
+        else:
+            self.camara = None
+            self.sensor_objeto = None
+            print("[Entorno] Modo SIMULACIÓN: usando sensores de blob")
 
         self.robocop = RoboboAPI.init_Robobo()
         self.robocop.connect()
-        self.sim = RoboboAPI.init_RoboboSim()
-        self.sim.connect()
+        
+        if not self.mundo_real:
+            self.sim = RoboboAPI.init_RoboboSim()
+            self.sim.connect()
+        else:
+            self.sim = None
 
         self.velocidad_min = -2
         self.velocidad_max = 2
 
         # Historial total con sublistas por episodio
-        self.historial_recompensas = []  # Lista de listas
-        self.historial_xy_objeto = []    # Lista de listas
-        self.historial_xy_robot = []     # Lista de listas
+        self.historial_recompensas = []
+        self.historial_xy_objeto = []
+        self.historial_xy_robot = []
         
         # Variables para el episodio actual
         self.recompensas_episodio = []
         self.xy_objeto_episodio = []
         self.xy_robot_episodio = []
 
-        # inicializacion de las variables 
+        # Inicialización de las variables 
         self._blob_xy = np.array([-1, -1], dtype=np.int32)
         self._IR = np.array([0, 0], dtype=np.int32)
         self._tamano_blob = np.array([-1], dtype=np.int32)
@@ -57,7 +82,6 @@ class Entorno(gym.Env):
         self.tamano_blob_max = 1000
         self.IR_max = 10000
         
-        # por un lado el xy que va de -1 a 101 y luego el tamano_blob
         self.observation_space = gym.spaces.Dict(
             {
                 "blob_xy": gym.spaces.Box(-1, 102, shape=(2,), dtype=int),
@@ -67,16 +91,11 @@ class Entorno(gym.Env):
             }
         )
 
-        # va de 0 a 20 y en R2
-        # si la accion es [2,4] no esque movewheels[2,4] 
-        # esque movewheels[antesx + 2, antesy + 4]
-        # asi mantener la velocidad es la misma accion independientemente del estado
         self.action_space = gym.spaces.Box(self.velocidad_min, self.velocidad_max, shape=(2,), dtype=float)
         self.ui_origen = "?"
     
     def _get_observacion(self):
         """Convierte estado interno a observación"""
-        
         return {
             "blob_xy": self._blob_xy, 
             "IR": self._IR,
@@ -84,8 +103,6 @@ class Entorno(gym.Env):
             "velocidad": self._velocidad
         }
 
-
-    # todo lo relacionado con info es dummy pero por si luego queremos usarlo
     def _get_info(self):
         return {'supu':'tamadre'}
 
@@ -110,7 +127,7 @@ class Entorno(gym.Env):
 
         self.numero_de_pasos = 1
 
-        # los metodos hablan con robocop y lo meten en las variables
+        # Los métodos hablan con robocop/cámara y lo meten en las variables
         self._blob_xy = RoboboAPI._get_xy(self)
         self._IR = RoboboAPI._get_IR(self)
         self._tamano_blob = RoboboAPI._get_tamano_blob(self)
@@ -128,20 +145,19 @@ class Entorno(gym.Env):
         return observacion, info
 
     def _get_recompensa(self):
-        """
-        Método auxiliar para devolver la recompensa a partir de los atributos de la clase
-        """
-
+        """Método auxiliar para devolver la recompensa"""
         x = self._blob_xy[0]
         d = RoboboAPI._distancia_a_blob(self)
         atras = self._IR[1]
-        #print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
-        return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + self.alpha4 * float(self._tamano_blob)
+        return (self.alpha1 * math.exp(-(x-50)**2) + 
+                self.alpha2 * math.exp(-(d/self.sigma)**2) - 
+                self.alpha3 * max(0, atras-58) + 
+                self.alpha4 * float(self._tamano_blob))
     
     def step(self, accion):
         """Ejecuta un instante"""
 
-        # --- UI update before physics ---
+        # UI update before physics
         ui.update(
             paso=self.numero_de_pasos,
             accion=accion,
@@ -166,7 +182,7 @@ class Entorno(gym.Env):
         recompensa = self._get_recompensa()
         self.recompensas_episodio.append(recompensa)
 
-        # --- UI update after computing reward ---
+        # UI update after computing reward
         ui.update(
             paso=self.numero_de_pasos,
             accion=accion,
@@ -186,6 +202,9 @@ class Entorno(gym.Env):
 
         observacion = self._get_observacion()
         info = self._get_info()
-        RoboboAPI.mover_blob_random_walk(self, self._velocidad_blob, self._velocidad_blob)
+        
+        # Solo mover blob en simulación
+        if not self.mundo_real:
+            RoboboAPI.mover_blob_random_walk(self, self._velocidad_blob, self._velocidad_blob)
 
         return observacion, recompensa, terminated, truncated, info

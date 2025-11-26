@@ -29,7 +29,7 @@ class UI:
         text.append(f"Robot dirigido por: {self.origen}\n", style="magenta")
         text.append(f"Recompensa: {self.recompensa:.3f}", style="green")
 
-        return Panel(text, box=box.ROUNDED, title="Simulación Robobo")
+        return Panel(text, box=box.ROUNDED, title="Simulación Robobo", width=40)
 
     def start(self):
         self._live = Live(self.render(), refresh_per_second=10, screen=False)

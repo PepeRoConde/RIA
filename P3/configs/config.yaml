@@ -1,38 +1,80 @@
-velocidad: 20
-tiempo: 0.04
-ruta_politica: P3/politicas/politica_01
-pasos_por_episodio: 15
-alpha1: 10.0
-alpha2: 20.0
-alpha3: 5.0
-alpha4: 2.0
-sigma: 1000
-verboso: False
-mundo_real: False
+# P3/configs/config.yaml
 
+# ========================================
+# CONFIGURACIÓN GENERAL
+# ========================================
+mundo_real: false  # true = usar robot real, false = simulación
+ruta_politica: "P3/politicas/politica_01.zip"
+
+# ========================================
+# CONFIGURACIÓN DE CÁMARAS
+# ========================================
+camaras:
+  # Índices de las cámaras (null = auto-detectar)
+  # En Mac: webcam_src=1 (externa), smartphone_src=0 (integrada)
+  # En Linux/Windows: webcam_src=0 (integrada), smartphone_src=1 (externa)
+  webcam_src: 0  # Cámara para telecontrol (gestos)
+  smartphone_src: 1  # Cámara para detección de objetos
+
+# ========================================
+# DETECCIÓN DE OBJETOS (solo mundo_real=true)
+# ========================================
+clase_objeto: 'cup'  # Objeto a detectar: cup, bottle, ball, person, etc.
+                     # Ver clases COCO: https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco.yaml
+visualizar_detecciones: true  # Mostrar ventana con detecciones
+
+# ========================================
+# CONFIGURACIÓN DEL ENTORNO
+# ========================================
+entorno:
+  pasos_por_episodio: 10
+  alpha1: 0.5  # Peso para centrado horizontal
+  alpha2: 0.5  # Peso para distancia al objeto
+  alpha3: 0.00001  # Penalización por sensor trasero
+  alpha4: 0.1  # Peso para tamaño del objeto
+  sigma: 15  # Desviación estándar para distancia
+  velocidad_blob: 20  # Velocidad de movimiento del objeto (simulación)
+
+# ========================================
+# CONFIGURACIÓN DE TELECONTROL
+# ========================================
 telecontrol:
-  # Velocidad base para movimientos (0-20)
-  velocidad_base: 20
-  # Factor de normalización para convertir velocidad a rango [-2, 2]
-  factor_normalizacion: 0.1  # 2.0 / 20.0
-  # Umbrales para detección de gestos (relativos al ancho de hombros)
+  velocidad_base: 20  # Velocidad base del robot
+  factor_normalizacion: 0.1  # Factor para convertir [0,20] a [-2,2]
+  
+  # Umbrales de detección de gestos (relativos al ancho de hombros)
   deteccion_gestos:
-    # Multiplicador para considerar brazo levantado (altura muñeca < hombro - umbral * ancho_hombros)
     umbral_brazo_arriba: 0.5
-    # Multiplicador para considerar brazo bajado (altura muñeca > hombro + umbral * ancho_hombros)
     umbral_brazo_abajo: 1.0
-    # Umbral para detectar manos juntas (distancia < umbral * ancho_hombros)
     umbral_manos_juntas: 0.5
-    # Umbral para detectar brazos separados/en cruz (distancia > umbral * ancho_hombros)
     umbral_brazos_separados: 1.5
-    # Umbral para altura similar de las manos (abs(altura_izq - altura_der) < umbral * ancho_hombros)
     umbral_manos_nivel: 0.2
-    # Umbral para manos muy juntas al pecho
     umbral_manos_pecho: 0.3
-  # Ratios de velocidad para cada movimiento (0.0 a 1.0)
-  # Estos se multiplican por velocidad_base
+  
+  # Ratios de movimiento
   ratios_movimiento:
-    ratio_avance_giro: 0.5   # Para giros: cuánto avanza mientras gira
-    ratio_rotacion_giro: 0.5  # Para giros: cuánto gira
-    ratio_adelante: 1.0        # Avance recto
-    ratio_atras: 1.0       # Retroceso
+    ratio_avance_giro: 0.5  # Cuánto avanza mientras gira
+    ratio_rotacion_giro: 0.5  # Cuánto gira
+    ratio_adelante: 1.0  # Velocidad al ir recto adelante
+    ratio_atras: 1.0  # Velocidad al ir recto atrás
+
+# ========================================
+# NOTAS DE CONFIGURACIÓN
+# ========================================
+# 
+# ÍNDICES DE CÁMARA:
+# - Si usas DroidCam o similar, el smartphone suele aparecer como índice 1
+# - La webcam integrada del portátil suele ser índice 0
+# - Puedes usar el script de test: python -c "from camara import test_camaras; test_camaras()"
+#
+# CLASES DE OBJETOS DETECTABLES (COCO):
+# person, bicycle, car, motorcycle, airplane, bus, train, truck, boat,
+# traffic light, fire hydrant, stop sign, parking meter, bench, bird, cat,
+# dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella,
+# handbag, tie, suitcase, frisbee, skis, snowboard, sports ball, kite,
+# baseball bat, baseball glove, skateboard, surfboard, tennis racket, bottle,
+# wine glass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange,
+# broccoli, carrot, hot dog, pizza, donut, cake, chair, couch, potted plant,
+# bed, dining table, toilet, tv, laptop, mouse, remote, keyboard, cell phone,
+# microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors,
+# teddy bear, hair drier, toothbrush
