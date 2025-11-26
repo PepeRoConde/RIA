@@ -17,17 +17,13 @@ def carga_politica(politica_ruta, entorno):
     print(f"Modelo cargado de {politica_ruta}")
     return modelo
 
-def carga_modelo_YOLO():
+def carga_modelo_YOLO(pose=True):
     device = get_device()
     print(f"[YOLO] Usando dispositivo: {device}")
-    model = YOLO('yolov8n-pose.pt', verbose=False)
-    model.to(device)
-    return model
-
-def carga_modelo_YOLO_objetos():
-    device = get_device()
-    print(f"[YOLO Objetos] Usando dispositivo: {device}")
-    model = YOLO('yolov8n.pt', verbose=False)
+    if pose:
+        model = YOLO('yolov8n-pose.pt', verbose=False)
+    else:
+        model = YOLO('yolov8n.pt', verbose=False)
     model.to(device)
     return model
 

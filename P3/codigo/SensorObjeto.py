@@ -3,6 +3,8 @@ import numpy as np
 from ultralytics import YOLO
 import torch
 
+from utils import carga_modelo_YOLO
+
 class SensorObjeto:
     def __init__(self, modelo_yolo='yolov8n.pt', clase_objetivo='cup'):
         self.clase_objetivo = clase_objetivo
@@ -18,10 +20,8 @@ class SensorObjeto:
         self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
         print(f"[SensorObjeto] Usando dispositivo: {self.device}")
         
-        # Load model
-        self.modelo = YOLO(modelo_yolo, verbose=False)
-        self.modelo.to(self.device)
-        
+        self.modelo = carga_modelo_YOLO(pose=False)
+
     def detectar_objeto(self, frame):
         self.frame_counter += 1
         

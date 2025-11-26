@@ -2,6 +2,10 @@ import cv2
 import threading
 import platform
 import time
+import yaml
+
+with open("P3/configs/config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
 class Camara:
     def __init__(self, src=None, nombre="Camara"):
@@ -22,8 +26,8 @@ class Camara:
             raise RuntimeError(f"No se pudo abrir la cámara '{nombre}' con src={src}")
 
         # Set resolution
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, config['frame_x'])
+        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, config['frame_y'])
 
         self.frame = None
         self.running = True

@@ -13,6 +13,9 @@ clase_objeto: 'bottle'  # Objeto a detectar: cup, bottle, ball, person, etc.
                      # Ver clases COCO: https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco.yaml
 visualizar_detecciones: true  # Mostrar ventana con detecciones
 
+frame_x: 600
+frame_y: 400
+
 # ========================================
 # CONFIGURACIÓN DEL ENTORNO
 # ========================================
@@ -26,8 +29,8 @@ entorno:
   velocidad_blob: 20  # Velocidad de movimiento del objeto (simulación)
 
 performance:
-  frame_skip_telecontrol: 3      # Process every 2nd frame for telecontrol
-  frame_skip_detection: 3        # Process every 3rd frame for object detection
+  frame_skip_telecontrol: 0  # Process every 2nd frame for telecontrol
+  frame_skip_detection: 0    # Process every 3rd frame for object detection
 
 # ========================================
 # CONFIGURACIÓN DE TELECONTROL
