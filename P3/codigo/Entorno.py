@@ -5,6 +5,8 @@ import gymnasium as gym
 import math
 
 import RoboboAPI
+from ui import ui
+
 
 # https://gymnasium.farama.org/introduction/create_custom_env/
 # https://gymnasium.farama.org/api/spaces/
@@ -70,7 +72,7 @@ class Entorno(gym.Env):
         # esque movewheels[antesx + 2, antesy + 4]
         # asi mantener la velocidad es la misma accion independientemente del estado
         self.action_space = gym.spaces.Box(self.velocidad_min, self.velocidad_max, shape=(2,), dtype=float)
-
+        self.ui_origen = "?"
     
     def _get_observacion(self):
         """Convierte estado interno a observación"""
@@ -135,48 +137,55 @@ class Entorno(gym.Env):
         atras = self._IR[1]
         #print(f'descentre: {(x-50)**2}, distancia_a_blob: {d}, atras: {max(0,atras-58)}, tamano_blob: {self._tamano_blob}')
         return self.alpha1 * math.exp(-(x-50)**2) + self.alpha2 * math.exp(-(d/self.sigma)**2) - self.alpha3 * max(0,atras-58) + self.alpha4 * float(self._tamano_blob)
-
+    
     def step(self, accion):
         """Ejecuta un instante"""
-        
-        print(f'-- Paso #{self.numero_de_pasos}\n accion: {accion}')
+
+        # --- UI update before physics ---
+        ui.update(
+            paso=self.numero_de_pasos,
+            accion=accion,
+            origen=self.ui_origen,
+            recompensa=0
+        )
+
         avance_recto, gire_derecha = accion[0], accion[1]
         dx = avance_recto + gire_derecha
         dy = avance_recto - gire_derecha
-
 
         self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[1] + dy)
         time.sleep(1)
         self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
         self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)
 
-        #print(f"VELOCIDAD {self._velocidad}")
-
         if self.numero_de_pasos == self.pasos_por_episodio:
             terminated, truncated = True, True
         else:
             terminated, truncated = False, False
 
+        recompensa = self._get_recompensa()
+        self.recompensas_episodio.append(recompensa)
+
+        # --- UI update after computing reward ---
+        ui.update(
+            paso=self.numero_de_pasos,
+            accion=accion,
+            origen=self.ui_origen,
+            recompensa=recompensa
+        )
+
         self.numero_de_pasos += 1
 
-        recompensa = self._get_recompensa()
-        #print(f'Recompensa: {recompensa}')
-        self.recompensas_episodio.append(recompensa)
-        #print(self.recompensas_episodio)
-        
-        
         self._blob_xy = RoboboAPI._get_xy(self)
         self._IR = RoboboAPI._get_IR(self)
         self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
-        # Guardar posiciones en el historial del episodio
         self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))
-        #print(self.xy_objeto_episodio)
-        
-        robot_xy = RoboboAPI._get_robot_xz(self)  
+        robot_xy = RoboboAPI._get_robot_xz(self)
         self.xy_robot_episodio.append(robot_xy)
 
         observacion = self._get_observacion()
         info = self._get_info()
         RoboboAPI.mover_blob_random_walk(self, self._velocidad_blob, self._velocidad_blob)
+
         return observacion, recompensa, terminated, truncated, info
