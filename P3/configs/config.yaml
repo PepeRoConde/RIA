@@ -3,7 +3,7 @@
 # ========================================
 # CONFIGURACIÓN GENERAL
 # ========================================
-mundo_real: True 
+mundo_real: False
 ruta_politica: "P3/politicas/politica_01.zip"
 #
 # ========================================
@@ -16,6 +16,8 @@ visualizar_detecciones: true  # Mostrar ventana con detecciones
 frame_x: 600
 frame_y: 400
 
+target_fps: 30
+
 # ========================================
 # CONFIGURACIÓN DEL ENTORNO
 # ========================================
@@ -26,7 +28,7 @@ entorno:
   alpha3: 0.00001  # Penalización por sensor trasero
   alpha4: 0.1  # Peso para tamaño del objeto
   sigma: 15  # Desviación estándar para distancia
-  velocidad_blob: 20  # Velocidad de movimiento del objeto (simulación)
+  velocidad_blob: 0  # Velocidad de movimiento del objeto (simulación)
 
 performance:
   frame_skip_telecontrol: 0  # Process every 2nd frame for telecontrol

@@ -189,7 +189,7 @@ class ModeloTelecontrol:
             return self.prediction_cache
         
         keypoint = resultados[0].keypoints.xy.cpu().numpy()  # Move back to CPU for processing
-        posicion = self.detectar_posicion_brazos(keypoint)
+        posicion = self.detectar_posicion_brazos(keypoint[0])
         frame_anotado = resultados[0].plot()
 
         muestra(frame_anotado, 'Telecontrol', posicion)

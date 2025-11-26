@@ -14,6 +14,7 @@ class Modelo:
     def predict(self, frame_webcam, observacion):
         if esta_viendo(observacion):
             self.entorno.ui_origen = "POLITICA P1"
+            print(self.politica.predict(observacion)[0])
             return self.politica.predict(observacion)[0]
         
         else:

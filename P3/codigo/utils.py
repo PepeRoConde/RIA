@@ -28,11 +28,13 @@ def carga_modelo_YOLO(pose=True):
     return model
 
 def esta_viendo(observacion):
-   x, y = observacion['blob_xy'][0], observacion['blob_xy'][1] 
-   if x == -1 or x == 101 or x == 0: return False
-   else:
-       cv2.destroyWindow("YOLO - Telecontrol")
-       return True
+    x, y = observacion['blob_xy'][0], observacion['blob_xy'][1] 
+    if x == -1 or x == 101 or x == 0: 
+        return False
+    else:
+        print('--> HA VISTO')
+        cv2.destroyWindow("YOLO - Telecontrol")
+        return True
 
 def muestra(frame_anotado, titulo, posicion=None):
     if posicion: 

@@ -38,6 +38,7 @@ def _get_xy(Entorno):
         return np.array([-1, -1])
 
 
+
 def _get_tamano_blob(Entorno):
 
     if Entorno.mundo_real:

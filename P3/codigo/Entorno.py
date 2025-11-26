@@ -96,6 +96,7 @@ class Entorno(gym.Env):
     
     def _get_observacion(self):
         """Convierte estado interno a observación"""
+        print(f'xy {self._blob_xy}     tamano {self._tamano_blob}')
         return {
             "blob_xy": self._blob_xy, 
             "IR": self._IR,
@@ -156,55 +157,61 @@ class Entorno(gym.Env):
     
     def step(self, accion):
         """Ejecuta un instante"""
+        try:
+            # UI update before physics
+            ui.update(
+                paso=self.numero_de_pasos,
+                accion=accion,
+                origen=self.ui_origen,
+                recompensa=0
+            )
 
-        # UI update before physics
-        ui.update(
-            paso=self.numero_de_pasos,
-            accion=accion,
-            origen=self.ui_origen,
-            recompensa=0
-        )
+            avance_recto, gire_derecha = accion[0], accion[1]
+            dx = avance_recto + gire_derecha
+            dy = avance_recto - gire_derecha
 
-        avance_recto, gire_derecha = accion[0], accion[1]
-        dx = avance_recto + gire_derecha
-        dy = avance_recto - gire_derecha
+            self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[1] + dy)
+            time.sleep(0.001)
+            self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
+            self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)
 
-        self.robocop.moveWheelsByTime(self._velocidad[0] + dx, self._velocidad[1] + dy, 0.01)
-        time.sleep(0.001)
-        self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
-        self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)
+            if self.numero_de_pasos == self.pasos_por_episodio:
+                terminated, truncated = True, True
+            else:
+                terminated, truncated = False, False
 
-        if self.numero_de_pasos == self.pasos_por_episodio:
-            terminated, truncated = True, True
-        else:
-            terminated, truncated = False, False
+            recompensa = self._get_recompensa()
+            self.recompensas_episodio.append(recompensa)
 
-        recompensa = self._get_recompensa()
-        self.recompensas_episodio.append(recompensa)
+            # UI update after computing reward
+            ui.update(
+                paso=self.numero_de_pasos,
+                accion=accion,
+                origen=self.ui_origen,
+                recompensa=recompensa
+            )
 
-        # UI update after computing reward
-        ui.update(
-            paso=self.numero_de_pasos,
-            accion=accion,
-            origen=self.ui_origen,
-            recompensa=recompensa
-        )
+            self.numero_de_pasos += 1
 
-        self.numero_de_pasos += 1
+            self._blob_xy = RoboboAPI._get_xy(self)
+            self._IR = RoboboAPI._get_IR(self)
+            self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
-        self._blob_xy = RoboboAPI._get_xy(self)
-        self._IR = RoboboAPI._get_IR(self)
-        self._tamano_blob = RoboboAPI._get_tamano_blob(self)
+            self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))
+            robot_xy = RoboboAPI._get_robot_xz(self)
+            self.xy_robot_episodio.append(robot_xy)
 
-        self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))
-        robot_xy = RoboboAPI._get_robot_xz(self)
-        self.xy_robot_episodio.append(robot_xy)
+            observacion = self._get_observacion()
+            print(f'obs: {observacion}')
+            info = self._get_info()
+            
+            # Solo mover blob en simulación
+            if not self.mundo_real:
+                RoboboAPI.mover_blob_random_walk(self, self._velocidad_blob, self._velocidad_blob)
 
-        observacion = self._get_observacion()
-        info = self._get_info()
-        
-        # Solo mover blob en simulación
-        if not self.mundo_real:
-            RoboboAPI.mover_blob_random_walk(self, self._velocidad_blob, self._velocidad_blob)
+            return observacion, recompensa, terminated, truncated, info
 
-        return observacion, recompensa, terminated, truncated, info
+        except Exception as e:
+            # This catches ANY error and prints it
+            print("\n=== ERROR NO CONTROLADO ===")
+            print(type(e).__name__, "-:-", e)

@@ -12,11 +12,6 @@ with open("P3/configs/config.yaml", "r") as file:
 
 camara_webcam, camara_smartphone = CamaraWebcam(), CamaraSmartphone()
 
-if camara_webcam is None:
-    print("[WARNING] Webcam no disponible - telecontrol deshabilitado")
-if camara_smartphone is None:
-    print("[WARNING] Smartphone no disponible - detección de objetos deshabilitada")
-
 entorno = Entorno(
     mundo_real=config['mundo_real'],
     camara=camara_smartphone if config['mundo_real'] else None,
@@ -32,11 +27,6 @@ modelo = Modelo(
 
 observacion, _ = entorno.reset()
 
-print("=== INICIANDO LOOP PRINCIPAL ===")
-print("Mostrando ambas cámaras:")
-print("- Webcam (izquierda): Para telecontrol con gestos")
-print("- Smartphone (derecha): Para detección de objetos")
-
 with ui.start():
     try:
         while True:
@@ -47,16 +37,14 @@ with ui.start():
             if frame_webcam is not None or not config['mundo_real']:
                 accion = modelo.predict(frame_webcam, observacion)
                 observacion, recompensa, terminated, truncated, info = entorno.step(accion)
-
-                if terminated:
-                    observacion, _ = entorno.reset()
-            
-            # Exit on 'q' key press
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
     
     except KeyboardInterrupt:
         print("\n=== INTERRUPCIÓN POR USUARIO ===")
     
+    except Exception as e:
+        # This catches ANY error and prints it
+        print("\n=== ERROR NO CONTROLADO ===")
+        print(type(e).__name__, "-:-", e)
+
     finally:
         limpia_recursos(camara_webcam, camara_smartphone)
