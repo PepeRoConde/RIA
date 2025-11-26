@@ -26,16 +26,13 @@ def _get_object_xz(Entorno):
     """
     Metodo auxiliar, interfaz con robocop
     """
-    if Entorno.mundo_real:
-        ...
-    else:
-        objetos = Entorno.sim.getObjects()
-        if objetos != None and len(objetos) > 0:
-            for objeto in objetos:
-                posicion = Entorno.sim.getObjectLocation(objeto)['position']
-                x_obj, z_obj = posicion['x'], posicion['z']
-        
-        return np.array([x_obj,z_obj])
+    objetos = Entorno.sim.getObjects()
+    if objetos != None and len(objetos) > 0:
+        for objeto in objetos:
+            posicion = Entorno.sim.getObjectLocation(objeto)['position']
+            x_obj, z_obj = posicion['x'], posicion['z']
+    
+    return np.array([x_obj,z_obj])
 
         
 

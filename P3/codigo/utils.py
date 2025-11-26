@@ -22,3 +22,5 @@ def muestra(frame_anotado, posicion):
     
     cv2.imshow("YOLO - Control Robobo", frame_anotado)
     cv2.waitKey(1)  # Add this!
+
+
