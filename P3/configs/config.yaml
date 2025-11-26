@@ -7,7 +7,8 @@ alpha2: 20.0
 alpha3: 5.0
 alpha4: 2.0
 sigma: 1000
-verboso: True
+verboso: False
+mundo_real: False
 
 telecontrol:
   # Velocidad base para movimientos (0-20)

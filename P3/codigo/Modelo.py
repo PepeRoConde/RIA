@@ -1,5 +1,6 @@
 from utils import carga_politica, esta_viendo
 from ModeloTelecontrol import carga_modelo_telecontrol
+
 class Modelo:
     def __init__(self, ruta_politica, entorno):
         self.modelo_telecontrol = carga_modelo_telecontrol() 
@@ -7,8 +8,8 @@ class Modelo:
 
     def predict(self, frame, observacion):
         if esta_viendo(observacion):
-            print('politica')
+            print('Robot dirigido por: POLITICA P1')
             return self.politica.predict(observacion)[0]
         else:
-            print('telecontrol')
+            print('Robot dirigido por: telecontrol')
             return self.modelo_telecontrol.predict(frame)

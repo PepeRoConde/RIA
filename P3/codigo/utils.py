@@ -8,11 +8,10 @@ def carga_politica(politica_ruta, entorno):
     return modelo
 
 def carga_modelo_YOLO():
-    return YOLO('yolov8n-pose.pt')
+    return YOLO('yolov8n-pose.pt', verbose=False)
 
 def esta_viendo(observacion):
    x, y = observacion['blob_xy'][0], observacion['blob_xy'][1] 
-   print(f'x: {x}')
    if x == -1 or x == 101 or x == 0: return False
    else: return True
 

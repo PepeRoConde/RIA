@@ -168,7 +168,7 @@ class ModeloTelecontrol:
         Returns:
             np.array: Acción [avance_recto, gire_derecha]
         """
-        resultados = self.YOLO(frame)
+        resultados = self.YOLO(frame, verbose=False)
         frame_anotado = resultados[0].plot()
         keypoint = resultados[0].keypoints.xy.cpu().numpy()[0]
         posicion = self.detectar_posicion_brazos(keypoint)
