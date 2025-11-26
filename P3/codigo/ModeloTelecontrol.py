@@ -2,7 +2,6 @@ import yaml
 import numpy as np
 import cv2
 from pathlib import Path
-import time
 import torch
 
 from utils import carga_modelo_YOLO, muestra
@@ -172,46 +171,29 @@ class ModeloTelecontrol:
         return "BRAZOS RELAJADOS"
 
     def predict(self, frame):
-        """
-        Predice la acción basándose en la detección de gestos (con frame skipping).
-        """
-        current_time = time.time()
-        
-        # Use cached prediction if available and recent
-        if (self.prediction_cache is not None and 
 
-            current_time - self.last_prediction_time < self.cache_duration):
-            return self.prediction_cache
-        
+        if frame is None:
+            return self.quieto()
+
         # Skip frames based on config
         self.frame_counter += 1
         if self.frame_counter % self.frame_skip != 0:
             return self.prediction_cache if self.prediction_cache is not None else self.quieto() 
-        
-        if frame is None:
-            return self.quieto()
-        
-        # Use smaller frame for faster processing
-        frame_small = cv2.resize(frame, (320, 240))
-        
+
         # Run inference on MPS device
-        resultados = self.YOLO(frame_small, verbose=False, device=self.device)
+        resultados = self.YOLO(frame, verbose=False, device=self.device)
         
         if len(resultados) == 0 or len(resultados[0].keypoints) == 0:
+            print('YOLO no vio nada. solucionado usando cache')
             self.prediction_cache = self.quieto()
-            self.last_prediction_time = current_time
             return self.prediction_cache
         
         keypoint = resultados[0].keypoints.xy.cpu().numpy()  # Move back to CPU for processing
         posicion = self.detectar_posicion_brazos(keypoint)
-        
-        # Only annotate and display occasionally for performance
-        if self.frame_counter % 10 == 0:
-            frame_anotado = resultados[0].plot()
-            muestra(frame_anotado, posicion)
+        frame_anotado = resultados[0].plot()
 
-        # Determine action based on gesture
-        action = self.quieto()
+        muestra(frame_anotado, 'Telecontrol', posicion)
+
         match posicion:
             case "BRAZO DERECHO":
                 action = self.derecha()
@@ -228,8 +210,6 @@ class ModeloTelecontrol:
         
         # Cache the prediction
         self.prediction_cache = action
-        self.last_prediction_time = current_time
-        
         return action
 
 def carga_modelo_telecontrol():

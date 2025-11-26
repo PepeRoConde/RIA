@@ -34,14 +34,14 @@ def carga_modelo_YOLO_objetos():
 def esta_viendo(observacion):
    x, y = observacion['blob_xy'][0], observacion['blob_xy'][1] 
    if x == -1 or x == 101 or x == 0: return False
-   else: return True
+   else:
+       cv2.destroyWindow("YOLO - Telecontrol")
+       return True
 
-def muestra(frame_anotado, posicion):
-    cv2.putText(frame_anotado, f"Posición: {posicion}",
-      (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.3,
-      (0, 255, 255), 3)
-    
-    cv2.imshow("YOLO - Control Robobo", frame_anotado)
+def muestra(frame_anotado, titulo, posicion=None):
+    if posicion: 
+        cv2.putText(frame_anotado, f"Posicion: {posicion}", (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1.3, (0, 255, 255), 3)
+    cv2.imshow(f"YOLO - {titulo}", frame_anotado)
     cv2.waitKey(1)
 
 def limpia_recursos(camara_webcam, camara_smartphone):
@@ -52,3 +52,16 @@ def limpia_recursos(camara_webcam, camara_smartphone):
         camara_smartphone.stop()
     cv2.destroyAllWindows()
     print("Programa finalizado")
+
+def muestra_doble(frame_webcam, frame_smartphone):
+    frame_webcam_labeled = frame_webcam.copy()
+    frame_smartphone_labeled = frame_smartphone.copy()
+    
+    cv2.putText(frame_webcam_labeled, "WEBCAM - Telecontrol", 
+               (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    cv2.putText(frame_smartphone_labeled, "SMARTPHONE - Deteccion", 
+               (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+    
+    combined_frame = cv2.hconcat([frame_webcam_labeled, frame_smartphone_labeled])
+    cv2.imshow("Dual Camera View", combined_frame)
+    cv2.waitKey(1)

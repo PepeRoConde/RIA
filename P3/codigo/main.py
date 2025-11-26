@@ -40,47 +40,10 @@ print("- Smartphone (derecha): Para detección de objetos")
 with ui.start():
     try:
         while True:
-            # Get frames from both cameras
-            frame_webcam = None
-            frame_smartphone = None
+
+            frame_webcam = camara_webcam.get_frame() if camara_webcam is not None else None
+            frame_smartphone = camara_smartphone.get_frame() if camara_smartphone is not None else None
             
-            if camara_webcam is not None:
-                frame_webcam = camara_webcam.get_frame()
-            
-            if camara_smartphone is not None:
-                frame_smartphone = camara_smartphone.get_frame()
-            
-            # Display both camera feeds
-            # if frame_webcam is not None and frame_smartphone is not None:
-            if True:
-            # Add labels to frames
-                frame_webcam_labeled = frame_webcam.copy()
-                frame_smartphone_labeled = frame_smartphone.copy()
-                
-                cv2.putText(frame_webcam_labeled, "WEBCAM - Telecontrol", 
-                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                cv2.putText(frame_smartphone_labeled, "SMARTPHONE - Deteccion", 
-                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                
-                # Display frames side by side
-                combined_frame = cv2.hconcat([frame_webcam_labeled, frame_smartphone_labeled])
-                cv2.imshow("Dual Camera View", combined_frame)
-            
-            elif frame_webcam is not None:
-                # Only webcam available
-                frame_webcam_labeled = frame_webcam.copy()
-                cv2.putText(frame_webcam_labeled, "WEBCAM - Telecontrol", 
-                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                cv2.imshow("Webcam View", frame_webcam_labeled)
-            
-            elif frame_smartphone is not None:
-                # Only smartphone available
-                frame_smartphone_labeled = frame_smartphone.copy()
-                cv2.putText(frame_smartphone_labeled, "SMARTPHONE - Deteccion", 
-                           (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
-                cv2.imshow("Smartphone View", frame_smartphone_labeled)
-            
-            # Process telecontrol if webcam frame is available
             if frame_webcam is not None or not config['mundo_real']:
                 accion = modelo.predict(frame_webcam, observacion)
                 observacion, recompensa, terminated, truncated, info = entorno.step(accion)

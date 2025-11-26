@@ -49,7 +49,7 @@ class Camara:
         with self.lock:
             if self.frame is None:
                 return None
-            return cv2.resize(cv2.flip(self.frame, 1), (640, 480))
+            return cv2.flip(self.frame, 1)
     
     def get_frame_raw(self):
         """Obtiene el frame sin procesar (sin flip ni redimensionado)"""

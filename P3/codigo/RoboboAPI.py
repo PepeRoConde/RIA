@@ -1,25 +1,10 @@
 from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
-import random
-import numpy as np
-import math
-
-def init_Robobo(ip='localhost'):
-    return Robobo(ip) 
-
-def init_RoboboSim(ip='localhost'):
-    return RoboboSim(ip)
-
-def _get_xy(Entorno):
-    """
-    Metodo auxiliar, interfaz con robocop
-    """
-from robobopy.Robobo import Robobo
-from robobosim.RoboboSim import RoboboSim
 from utils import muestra
 import random
 import numpy as np
 import math
+import cv2
 
 def init_Robobo(ip='localhost'):
     return Robobo(ip) 
@@ -28,11 +13,7 @@ def init_RoboboSim(ip='localhost'):
     return RoboboSim(ip)
 
 def _get_xy(Entorno):
-    """
-    Obtiene las coordenadas xy del objeto.
-    - En simulación: usa los sensores de blob del Robobo
-    - En mundo real: usa la cámara para detectar objetos
-    """
+
     if Entorno.mundo_real:
         # Usar cámara para detectar el objeto
         frame = Entorno.camara.get_frame()
@@ -43,12 +24,8 @@ def _get_xy(Entorno):
         
         # Opcional: visualizar la detección para debugging
         if Entorno.visualizar_detecciones:
-            frame_viz = Entorno.sensor_objeto.visualizar_deteccion(
-                frame, x, y, tamano
-            )
-            import cv2
-            cv2.imshow("Detección de Objeto", frame_viz)
-            cv2.waitKey(1)
+            frame = Entorno.sensor_objeto.visualizar_deteccion(frame, x, y, tamano)
+            muestra(frame, 'Deteccion Objeto')
         
         return np.array([x, y])
     else:
@@ -62,11 +39,7 @@ def _get_xy(Entorno):
 
 
 def _get_tamano_blob(Entorno):
-    """
-    Obtiene el tamaño del objeto detectado.
-    - En simulación: usa el tamaño del blob
-    - En mundo real: usa el área del bounding box de la cámara
-    """
+
     if Entorno.mundo_real:
         # Usar cámara
         frame = Entorno.camara.get_frame()
