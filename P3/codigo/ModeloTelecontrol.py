@@ -2,6 +2,8 @@ import yaml
 import numpy as np
 import cv2
 from pathlib import Path
+import time
+import torch
 
 from utils import carga_modelo_YOLO, muestra
 
@@ -11,7 +13,7 @@ with open("P3/configs/config.yaml", "r") as file:
 
 class ModeloTelecontrol:
     def __init__(self, velocidad_base=None):
-        # Cargar sección de configuración de telecontrol
+       # Cargar sección de configuración de telecontrol
         config_tc = config.get('telecontrol', {})
         
         # Parámetros de velocidad
@@ -32,10 +34,21 @@ class ModeloTelecontrol:
         self.ratio_avance_giro = config_movimiento.get('ratio_avance_giro', 0.5)
         self.ratio_rotacion_giro = config_movimiento.get('ratio_rotacion_giro', 0.5)
         self.ratio_adelante = config_movimiento.get('ratio_adelante', 1.0)
-        self.ratio_atras = config_movimiento.get('ratio_atras', 1.0)
+        self.ratio_atras = config_movimiento.get('ratio_atras', 1.0) 
+
+        # Modelo YOLO - load only when needed
+        self.YOLO = carga_modelo_YOLO() 
+        self.last_prediction_time = 0
+        self.prediction_cache = None
+        self.cache_duration = 0.1
         
-        # Modelo YOLO
-        self.YOLO = carga_modelo_YOLO()
+        # Performance optimization
+        self.frame_skip = 2
+        self.frame_counter = 0
+        
+        # Device info
+        self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+        print(f"[Telecontrol] Usando dispositivo: {self.device}")
 
     def _normalizar_velocidad(self, vel):
         """Convierte velocidad del rango [0, 20] al rango [-2, 2]"""
@@ -160,39 +173,64 @@ class ModeloTelecontrol:
 
     def predict(self, frame):
         """
-        Predice la acción basándose en la detección de gestos.
-        
-        Args:
-            frame: Frame de la cámara
-            
-        Returns:
-            np.array: Acción [avance_recto, gire_derecha]
+        Predice la acción basándose en la detección de gestos (con frame skipping).
         """
-        resultados = self.YOLO(frame, verbose=False)
-        frame_anotado = resultados[0].plot()
-        keypoint = resultados[0].keypoints.xy.cpu().numpy()
-        posicion = self.detectar_posicion_brazos(keypoint)
-        muestra(frame_anotado, posicion) 
+        current_time = time.time()
+        
+        # Use cached prediction if available and recent
+        if (self.prediction_cache is not None and 
 
+            current_time - self.last_prediction_time < self.cache_duration):
+            return self.prediction_cache
+        
+        # Skip frames based on config
+        self.frame_counter += 1
+        if self.frame_counter % self.frame_skip != 0:
+            return self.prediction_cache if self.prediction_cache is not None else self.quieto() 
+        
+        if frame is None:
+            return self.quieto()
+        
+        # Use smaller frame for faster processing
+        frame_small = cv2.resize(frame, (320, 240))
+        
+        # Run inference on MPS device
+        resultados = self.YOLO(frame_small, verbose=False, device=self.device)
+        
+        if len(resultados) == 0 or len(resultados[0].keypoints) == 0:
+            self.prediction_cache = self.quieto()
+            self.last_prediction_time = current_time
+            return self.prediction_cache
+        
+        keypoint = resultados[0].keypoints.xy.cpu().numpy()  # Move back to CPU for processing
+        posicion = self.detectar_posicion_brazos(keypoint)
+        
+        # Only annotate and display occasionally for performance
+        if self.frame_counter % 10 == 0:
+            frame_anotado = resultados[0].plot()
+            muestra(frame_anotado, posicion)
+
+        # Determine action based on gesture
+        action = self.quieto()
         match posicion:
             case "BRAZO DERECHO":
-                return self.derecha()
-        
+                action = self.derecha()
             case "BRAZO IZQUIERDO":
-                return self.izquierda()
-        
+                action = self.izquierda()
             case "BRAZOS RELAJADOS" | "MANOS JUNTAS ARRIBA":
-                return self.adelante()
-        
+                action = self.adelante()
             case "MANOS JUNTAS PECHO":
-                return self.atras()
-        
+                action = self.atras()
             case "BRAZOS EN CRUZ":
-                return self.quieto()
-            
+                action = self.quieto()
             case _:
-                return self.quieto()
+                action = self.quieto()
+        
+        # Cache the prediction
+        self.prediction_cache = action
+        self.last_prediction_time = current_time
+        
+        return action
 
-
-def carga_modelo_telecontrol(velocidad_base=None):
-    return ModeloTelecontrol(velocidad_base=velocidad_base)
+def carga_modelo_telecontrol():
+    return ModeloTelecontrol()

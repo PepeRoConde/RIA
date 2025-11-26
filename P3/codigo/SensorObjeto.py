@@ -1,44 +1,57 @@
 import cv2
 import numpy as np
 from ultralytics import YOLO
+import time
+import torch
 
 class SensorObjeto:
-    """
-    Detecta objetos usando una cámara en lugar de los sensores del Robobo.
-    Útil para el mundo real donde los sensores de blob pueden no funcionar bien.
-    """
     def __init__(self, modelo_yolo='yolov8n.pt', clase_objetivo='cup'):
-        """
-        Args:
-            modelo_yolo: Ruta al modelo YOLO a usar
-            clase_objetivo: Nombre de la clase a detectar (ej: 'cup', 'bottle', 'ball')
-        """
-        self.modelo = YOLO(modelo_yolo, verbose=False)
         self.clase_objetivo = clase_objetivo
         self.frame_width = 640
         self.frame_height = 480
         
+        # Performance optimizations
+        self.last_detection_time = 0
+        self.cache_duration = 0.2
+        self.cached_detection = (-1, -1, -1)
+        self.frame_skip = 3
+        self.frame_counter = 0
+        
+        # Device setup
+        self.device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+        print(f"[SensorObjeto] Usando dispositivo: {self.device}")
+        
+        # Load model
+        self.modelo = YOLO(modelo_yolo, verbose=False)
+        self.modelo.to(self.device)
+        
     def detectar_objeto(self, frame):
         """
-        Detecta el objeto objetivo en el frame.
-        
-        Args:
-            frame: Frame de OpenCV (numpy array)
-            
-        Returns:
-            tuple: (x, y, tamano) donde:
-                - x: coordenada x normalizada [0-100] (-1 si no detectado)
-                - y: coordenada y normalizada [0-100] (-1 si no detectado)
-                - tamano: área del bounding box en pixels (-1 si no detectado)
+        Detecta el objeto objetivo en el frame (con frame skipping).
         """
-        if frame is None:
-            return -1, -1, -1
-            
-        # Ejecutar detección
-        resultados = self.modelo(frame, verbose=False)
+        current_time = time.time()
+        
+        # Skip frames based on config (but always process if no cache exists)
+        self.frame_counter += 1
+        should_process = (
+            self.frame_counter % self.frame_skip == 0 or 
+            self.cached_detection is None or
+            current_time - self.last_detection_time >= self.cache_duration
+        )
+        
+        if not should_process:
+            return self.cached_detection 
+
+        # Use smaller frame for faster processing
+        frame_small = cv2.resize(frame, (320, 240))
+        
+        # Ejecutar detección en MPS
+        resultados = self.modelo(frame_small, verbose=False, device=self.device)
         
         if len(resultados) == 0 or len(resultados[0].boxes) == 0:
-            return -1, -1, -1
+            self.cached_detection = (-1, -1, -1)
+            self.last_detection_time = current_time
+            return self.cached_detection
         
         # Buscar el objeto objetivo con mayor confianza
         mejor_deteccion = None
@@ -54,10 +67,18 @@ class SensorObjeto:
                 mejor_deteccion = box
         
         if mejor_deteccion is None:
-            return -1, -1, -1
+            self.cached_detection = (-1, -1, -1)
+            self.last_detection_time = current_time
+            return self.cached_detection
         
         # Extraer coordenadas del bounding box
-        x1, y1, x2, y2 = mejor_deteccion.xyxy[0].cpu().numpy()
+        x1, y1, x2, y2 = mejor_deteccion.xyxy[0].cpu().numpy()  # Move to CPU for processing
+        
+        # Scale coordinates back to original size
+        x1 = x1 * (self.frame_width / 320)
+        y1 = y1 * (self.frame_height / 240)
+        x2 = x2 * (self.frame_width / 320)
+        y2 = y2 * (self.frame_height / 240)
         
         # Calcular centro del objeto
         centro_x = (x1 + x2) / 2
@@ -74,8 +95,11 @@ class SensorObjeto:
         x_norm = np.clip(x_norm, 0, 100)
         y_norm = np.clip(y_norm, 0, 100)
         
-        return x_norm, y_norm, tamano
-    
+        self.cached_detection = (x_norm, y_norm, tamano)
+        self.last_detection_time = current_time
+        
+        return self.cached_detection
+     
     def visualizar_deteccion(self, frame, x, y, tamano):
         """
         Dibuja la detección en el frame para debugging.

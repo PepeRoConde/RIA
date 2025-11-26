@@ -36,7 +36,6 @@ def _get_xy(Entorno):
     if Entorno.mundo_real:
         # Usar cámara para detectar el objeto
         frame = Entorno.camara.get_frame()
-        muestra(frame, posicion)
         if frame is None:
             return np.array([-1, -1])
         

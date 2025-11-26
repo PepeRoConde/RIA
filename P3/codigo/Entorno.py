@@ -11,7 +11,7 @@ from ui import ui
 class Entorno(gym.Env):
 
     def __init__(self, 
-                pasos_por_episodio = 10,
+                pasos_por_episodio = 1000000,
                 alpha1 = 0.5,
                 alpha2 = 0.5,
                 alpha3 = 0.00001,
@@ -169,7 +169,7 @@ class Entorno(gym.Env):
         dx = avance_recto + gire_derecha
         dy = avance_recto - gire_derecha
 
-        self.robocop.moveWheels(self._velocidad[0] + dx, self._velocidad[1] + dy)
+        self.robocop.moveWheelsByTime(self._velocidad[0] + dx, self._velocidad[1] + dy, 0.01)
         time.sleep(1)
         self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
         self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)

@@ -3,19 +3,9 @@
 # ========================================
 # CONFIGURACIÓN GENERAL
 # ========================================
-mundo_real: false  # true = usar robot real, false = simulación
+mundo_real: True 
 ruta_politica: "P3/politicas/politica_01.zip"
-
-# ========================================
-# CONFIGURACIÓN DE CÁMARAS
-# ========================================
-camaras:
-  # Índices de las cámaras (null = auto-detectar)
-  # En Mac: webcam_src=1 (externa), smartphone_src=0 (integrada)
-  # En Linux/Windows: webcam_src=0 (integrada), smartphone_src=1 (externa)
-  webcam_src: 0  # Cámara para telecontrol (gestos)
-  smartphone_src: 1  # Cámara para detección de objetos
-
+#
 # ========================================
 # DETECCIÓN DE OBJETOS (solo mundo_real=true)
 # ========================================
@@ -27,13 +17,18 @@ visualizar_detecciones: true  # Mostrar ventana con detecciones
 # CONFIGURACIÓN DEL ENTORNO
 # ========================================
 entorno:
-  pasos_por_episodio: 10
+  pasos_por_episodio: 10000
   alpha1: 0.5  # Peso para centrado horizontal
   alpha2: 0.5  # Peso para distancia al objeto
   alpha3: 0.00001  # Penalización por sensor trasero
   alpha4: 0.1  # Peso para tamaño del objeto
   sigma: 15  # Desviación estándar para distancia
   velocidad_blob: 20  # Velocidad de movimiento del objeto (simulación)
+
+performance:
+  frame_skip_telecontrol: 3      # Process every 2nd frame for telecontrol
+  frame_skip_detection: 3        # Process every 3rd frame for object detection
+  cache_duration: 0.1            # Cache predictions for 100ms
 
 # ========================================
 # CONFIGURACIÓN DE TELECONTROL
