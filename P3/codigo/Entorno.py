@@ -170,7 +170,7 @@ class Entorno(gym.Env):
         dy = avance_recto - gire_derecha
 
         self.robocop.moveWheelsByTime(self._velocidad[0] + dx, self._velocidad[1] + dy, 0.01)
-        time.sleep(1)
+        time.sleep(0.001)
         self._velocidad[0] = np.clip(self._velocidad[0] + dx, self.velocidad_min, self.velocidad_max)
         self._velocidad[1] = np.clip(self._velocidad[1] + dy, self.velocidad_min, self.velocidad_max)
 
