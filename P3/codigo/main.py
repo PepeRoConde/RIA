@@ -7,7 +7,7 @@ from Entorno import Entorno
 from Modelo import Modelo
 import traceback
 
-camara_webcam = CamaraWebcam(0) 
+camara_webcam = CamaraWebcam(1) 
 camara_smartphone = None if config['mundo_real'] else CamaraSmartphone()
 #camara_smartphone = None
 

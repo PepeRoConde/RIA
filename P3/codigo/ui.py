@@ -33,7 +33,7 @@ class UI:
         text.append(f"Robot dirigido por: {self.origen}\n", style="magenta")
         text.append(f"Recompensa: {self.recompensa:.3f}\n", style="green")
         text.append(f"Tamano: {self.tamano}\n", style="magenta")
-        text.append(f"Tamano: {self.xy}", style="green")
+        text.append(f"X Y: {self.xy}", style="green")
 
         return Panel(text, box=box.ROUNDED, title="Simulación Robobo", width=40)
 

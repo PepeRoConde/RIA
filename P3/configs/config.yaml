@@ -3,7 +3,7 @@ mundo_real: True
 ruta_politica: "P3/politicas/politica_01.zip"
 clase_objeto: 'bottle' 
 visualizar_detecciones: true 
-ip: "172.20.10.2"
+ip: "172.20.10.3"
 
 frame_x: 600
 frame_y: 400

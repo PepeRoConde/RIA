@@ -60,9 +60,9 @@ def muestra_doble(frame_webcam, frame_smartphone):
     frame_smartphone_labeled = frame_smartphone.copy()
     
     cv2.putText(frame_webcam_labeled, "WEBCAM - Telecontrol", 
-               (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+               (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (40, 180, 40), 2)
     cv2.putText(frame_smartphone_labeled, "SMARTPHONE - Deteccion", 
-               (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+               (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (30, 230, 30), 2)
     
     combined_frame = cv2.hconcat([frame_webcam_labeled, frame_smartphone_labeled])
     cv2.imshow("Dual Camera View", combined_frame)

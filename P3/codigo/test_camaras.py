@@ -93,7 +93,7 @@ def test_camara_especifica(indice):
                 (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 0.6,
-                (0, 255, 0),
+                (100, 255, 10),
                 2
             )
             
