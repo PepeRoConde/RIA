@@ -6,6 +6,7 @@ import random
 import numpy as np
 import math
 import cv2
+import time
 
 def init_Robobo(ip='localhost'):
     return Robobo(ip) 
@@ -63,7 +64,7 @@ def _get_tamano_blob(Entorno):
         return np.array([-1])
 
 def _get_robobo_frame(video):
-    return video.getImage()
+    return cv2.flip(video.getImage(), 1)
 
 def _get_object_xz(Entorno):
     """
@@ -153,7 +154,9 @@ def reset(Entorno):
         Entorno.sim.resetSimulation()
         Entorno.sim.wait(1)
     
+    Entorno.robocop.wait(1)
     Entorno.robocop.moveTiltTo(degrees=110, speed=50, wait=True)
+    Entorno.robocop.wait(1)
 
 
 def mover_blob_random_walk(entorno, dx, dz):

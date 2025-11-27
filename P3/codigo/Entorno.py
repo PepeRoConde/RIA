@@ -118,11 +118,17 @@ class Entorno(gym.Env):
     def _get_info(self):
         return {'supu':'tamadre'}
 
+    def desconecta(self):
+        self.robocop.disconnect()
+
     def reset(self, seed: Optional[int] = None, options: Optional[dict] = None):
         """Nuevo episodio"""
-        super().reset(seed=seed)
 
         print('=======RESET')
+
+        super().reset(seed=seed)
+        RoboboAPI.reset(self)
+        self.numero_de_pasos = 1
 
         # Guardar el episodio anterior en el historial total
         if self.recompensas_episodio:
@@ -135,27 +141,19 @@ class Entorno(gym.Env):
         self.xy_objeto_episodio = []
         self.xy_robot_episodio = []
 
-        RoboboAPI.reset(self)
-
-        print('klkk')
-
-        self.numero_de_pasos = 1
 
         # Los métodos hablan con robocop/cámara y lo meten en las variables
         self._blob_xy = RoboboAPI._get_xy(self)
         self._IR = RoboboAPI._get_IR(self)
         self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
-        print('-l-l-l-')
         # Guardar posición inicial del objeto
         self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))
         
-        print('-4-4-4-')
         # Guardar posición inicial del robot
         robot_xy = RoboboAPI._get_robot_xz(self)  
         self.xy_robot_episodio.append(robot_xy)
 
-        print('-5-5-5-')
         observacion = self._get_observacion()
         info = self._get_info()
 
@@ -180,7 +178,8 @@ class Entorno(gym.Env):
                 accion=accion,
                 origen=self.ui_origen,
                 recompensa=0,
-                tamano=self._tamano_blob
+                tamano=self._tamano_blob,
+                xy=self._blob_xy
             )
 
             avance_recto, gire_derecha = accion[0], accion[1]
@@ -213,7 +212,8 @@ class Entorno(gym.Env):
                 accion=accion,
                 origen=self.ui_origen,
                 recompensa=recompensa,
-                tamano=self._tamano_blob
+                tamano=self._tamano_blob,
+                xy=self._blob_xy
             )
 
             self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))

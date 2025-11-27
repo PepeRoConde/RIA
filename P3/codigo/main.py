@@ -7,11 +7,9 @@ from Entorno import Entorno
 from Modelo import Modelo
 import traceback
 
-camara_webcam = CamaraWebcam() 
-#camara_smartphone = CamaraSmartphone()
-camara_smartphone = None
- 
-
+camara_webcam = CamaraWebcam(0) 
+camara_smartphone = None if config['mundo_real'] else CamaraSmartphone()
+#camara_smartphone = None
 
 entorno = Entorno(
     ip=config['ip'],
@@ -34,12 +32,12 @@ with ui.start():
         while True:
 
             frame_webcam = camara_webcam.get_frame() if camara_webcam else None
-            print('imprimiendo frame ', frame_webcam)
             if frame_webcam is not None or not config['mundo_real']:
                 accion = modelo.predict(frame_webcam, observacion)
                 observacion, recompensa, terminated, truncated, info = entorno.step(accion) 
 
     except KeyboardInterrupt:
+        entorno.desconecta()
         print("\n=== INTERRUPCIÓN POR USUARIO ===")
     
     except Exception as e:

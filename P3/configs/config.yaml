@@ -7,7 +7,7 @@ ip: "172.20.10.2"
 
 frame_x: 600
 frame_y: 400
-factor_tamano: 0.002
+factor_tamano: 0.007
 
 target_fps: 30
 
@@ -39,7 +39,7 @@ telecontrol:
   
   # Ratios de movimiento
   ratios_movimiento:
-    ratio_avance_giro: 0.5  # Cuánto avanza mientras gira
+    ratio_avance_giro: 0.25  # Cuánto avanza mientras gira
     ratio_rotacion_giro: 0.5  # Cuánto gira
     ratio_adelante: 1.0  # Velocidad al ir recto adelante
     ratio_atras: 1.0  # Velocidad al ir recto atrás
