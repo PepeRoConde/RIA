@@ -2,6 +2,10 @@ from stable_baselines3 import SAC
 from ultralytics import YOLO
 import cv2
 import torch
+import yaml
+
+with open("P3/configs/config.yaml", "r") as file:
+    config = yaml.safe_load(file)
 
 def get_device():
     """Determine the best available device"""

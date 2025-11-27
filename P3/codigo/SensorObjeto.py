@@ -3,13 +3,16 @@ import numpy as np
 from ultralytics import YOLO
 import torch
 
-from utils import carga_modelo_YOLO
+from utils import carga_modelo_YOLO, config
+
+
 
 class SensorObjeto:
     def __init__(self, modelo_yolo='yolov8n.pt', clase_objetivo='cup'):
         self.clase_objetivo = clase_objetivo
-        self.frame_width = 640
-        self.frame_height = 480
+        self.frame_width = config['frame_x']
+        self.frame_height = config['frame_y'] 
+        self.factor_tamano = config['factor_tamano'] 
         
         # Performance optimizations
         self.cached_detection = (-1, -1, -1)
@@ -60,13 +63,18 @@ class SensorObjeto:
         # Centros
         centro_x, centro_y  = (x1 + x2) / 2, (y1 + y2) / 2
         
-        # Calcular tamaño (área del bounding box)
-        tamano = int((x2 - x1) * (y2 - y1))
         
         # Normalizar y clipear  
         x_norm = np.clip(int((centro_x / self.frame_width) * 100), 0, 100)
         y_norm = np.clip(int((centro_y / self.frame_height) * 100), 0, 100)
+
+        # Calcular tamaño (área del bounding box)
+        tamano = int((x2 - x1) * (y2 - y1))
+
+        print(f'tmano: {tamano}, correjido: {self.factor_tamano * tamano}')
         
+        tamano = tamano * self.factor_tamano
+
         self.cached_detection = (x_norm, y_norm, tamano)
         
         return self.cached_detection

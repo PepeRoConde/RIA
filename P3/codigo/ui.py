@@ -10,14 +10,16 @@ class UI:
         self.accion = [0, 0]
         self.origen = "?"
         self.recompensa = 0
+        self.tamano = 0
 
         self._live = None
 
-    def update(self, paso, accion, origen, recompensa):
+    def update(self, paso, accion, origen, recompensa, tamano):
         self.paso = paso
         self.accion = accion
         self.origen = origen
         self.recompensa = recompensa
+        self.tamano = tamano
 
         if self._live:
             self._live.update(self.render())
@@ -27,7 +29,8 @@ class UI:
         text.append(f"-- Paso #{self.paso}\n", style="bold cyan")
         text.append(f"Acción: {self.accion}\n", style="white")
         text.append(f"Robot dirigido por: {self.origen}\n", style="magenta")
-        text.append(f"Recompensa: {self.recompensa:.3f}", style="green")
+        text.append(f"Recompensa: {self.recompensa:.3f}\n", style="green")
+        text.append(f"Tamano: {self.tamano}", style="magenta")
 
         return Panel(text, box=box.ROUNDED, title="Simulación Robobo", width=40)
 

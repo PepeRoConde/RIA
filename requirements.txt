@@ -18,3 +18,4 @@ tqdm
 ultralytics
 opencv-python
 rich
+robobopy_videostream

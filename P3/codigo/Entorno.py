@@ -5,12 +5,13 @@ import gymnasium as gym
 import math
 
 import RoboboAPI
-from ui import ui
 
+from ui import ui
 
 class Entorno(gym.Env):
 
     def __init__(self, 
+                ip = 'localhost',
                 pasos_por_episodio = 1000000,
                 alpha1 = 0.5,
                 alpha2 = 0.5,
@@ -33,12 +34,27 @@ class Entorno(gym.Env):
         self.mundo_real = mundo_real
         self.visualizar_detecciones = visualizar_detecciones
 
-        # Inicializar sensor de objeto si estamos en mundo real
-        if self.mundo_real:
+        self.robocop = RoboboAPI.init_Robobo(ip)
+        self.robocop.connect()
+
+        if not self.mundo_real:
+            self.sim = RoboboAPI.init_RoboboSim(ip)
+            self.sim.connect()
+            self.video = None
+            self.camara = None
+            self.sensor_objeto = None
+            print("[Entorno] Modo SIMULACIÓN: usando sensores de blob")
+
+        else:
+            self.sim = None
+            self.video = RoboboAPI.init_RoboboVideo(ip)
+            self.video.connect()
+
             if camara is None:
-                raise ValueError("Se requiere una cámara para mundo_real=True")
-            
-            self.camara = camara
+                #raise ValueError("Se requiere una cámara para mundo_real=True")
+                self.get_frame = RoboboAPI._get_robobo_frame(self.video)
+            else:
+                self.get_frame = camara.get_frame
             
             # Inicializar el sensor de objeto basado en cámara
             from SensorObjeto import SensorObjeto
@@ -47,20 +63,8 @@ class Entorno(gym.Env):
                 clase_objetivo=clase_objeto
             )
             print(f"[Entorno] Modo MUNDO REAL: usando cámara para detectar '{clase_objeto}'")
-        else:
-            self.camara = None
-            self.sensor_objeto = None
-            print("[Entorno] Modo SIMULACIÓN: usando sensores de blob")
 
-        self.robocop = RoboboAPI.init_Robobo()
-        self.robocop.connect()
         
-        if not self.mundo_real:
-            self.sim = RoboboAPI.init_RoboboSim()
-            self.sim.connect()
-        else:
-            self.sim = None
-
         self.velocidad_min = -2
         self.velocidad_max = 2
 
@@ -96,7 +100,7 @@ class Entorno(gym.Env):
     
     def _get_observacion(self):
         """Convierte estado interno a observación"""
-        print(f'xy {self._blob_xy}     tamano {self._tamano_blob}')
+        #print(f'xy {self._blob_xy}     tamano {self._tamano_blob}')
         return {
             "blob_xy": self._blob_xy, 
             "IR": self._IR,
@@ -163,7 +167,8 @@ class Entorno(gym.Env):
                 paso=self.numero_de_pasos,
                 accion=accion,
                 origen=self.ui_origen,
-                recompensa=0
+                recompensa=0,
+                tamano=self._tamano_blob
             )
 
             avance_recto, gire_derecha = accion[0], accion[1]
@@ -183,13 +188,6 @@ class Entorno(gym.Env):
             recompensa = self._get_recompensa()
             self.recompensas_episodio.append(recompensa)
 
-            # UI update after computing reward
-            ui.update(
-                paso=self.numero_de_pasos,
-                accion=accion,
-                origen=self.ui_origen,
-                recompensa=recompensa
-            )
 
             self.numero_de_pasos += 1
 
@@ -197,12 +195,21 @@ class Entorno(gym.Env):
             self._IR = RoboboAPI._get_IR(self)
             self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
+            # UI update after computing reward
+            ui.update(
+                paso=self.numero_de_pasos,
+                accion=accion,
+                origen=self.ui_origen,
+                recompensa=recompensa,
+                tamano=self._tamano_blob
+            )
+
             self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))
             robot_xy = RoboboAPI._get_robot_xz(self)
             self.xy_robot_episodio.append(robot_xy)
 
             observacion = self._get_observacion()
-            print(f'obs: {observacion}')
+            #print(f'obs: {observacion}')
             info = self._get_info()
             
             # Solo mover blob en simulación
@@ -215,3 +222,4 @@ class Entorno(gym.Env):
             # This catches ANY error and prints it
             print("\n=== ERROR NO CONTROLADO ===")
             print(type(e).__name__, "-:-", e)
+            

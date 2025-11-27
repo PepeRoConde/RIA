@@ -1,26 +1,16 @@
-# P3/configs/config.yaml
+mundo_real: True
 
-# ========================================
-# CONFIGURACIÓN GENERAL
-# ========================================
-mundo_real: False
 ruta_politica: "P3/politicas/politica_01.zip"
-#
-# ========================================
-# DETECCIÓN DE OBJETOS (solo mundo_real=true)
-# ========================================
-clase_objeto: 'bottle'  # Objeto a detectar: cup, bottle, ball, person, etc.
-                     # Ver clases COCO: https://github.com/ultralytics/ultralytics/blob/main/ultralytics/cfg/datasets/coco.yaml
-visualizar_detecciones: true  # Mostrar ventana con detecciones
+clase_objeto: 'bottle' 
+visualizar_detecciones: true 
+ip: "localhost"
 
 frame_x: 600
 frame_y: 400
+factor_tamano: 0.002
 
 target_fps: 30
 
-# ========================================
-# CONFIGURACIÓN DEL ENTORNO
-# ========================================
 entorno:
   pasos_por_episodio: 10000
   alpha1: 0.5  # Peso para centrado horizontal
@@ -34,9 +24,6 @@ performance:
   frame_skip_telecontrol: 0  # Process every 2nd frame for telecontrol
   frame_skip_detection: 0    # Process every 3rd frame for object detection
 
-# ========================================
-# CONFIGURACIÓN DE TELECONTROL
-# ========================================
 telecontrol:
   velocidad_base: 20  # Velocidad base del robot
   factor_normalizacion: 0.1  # Factor para convertir [0,20] a [-2,2]
@@ -57,23 +44,3 @@ telecontrol:
     ratio_adelante: 1.0  # Velocidad al ir recto adelante
     ratio_atras: 1.0  # Velocidad al ir recto atrás
 
-# ========================================
-# NOTAS DE CONFIGURACIÓN
-# ========================================
-# 
-# ÍNDICES DE CÁMARA:
-# - Si usas DroidCam o similar, el smartphone suele aparecer como índice 1
-# - La webcam integrada del portátil suele ser índice 0
-# - Puedes usar el script de test: python -c "from camara import test_camaras; test_camaras()"
-#
-# CLASES DE OBJETOS DETECTABLES (COCO):
-# person, bicycle, car, motorcycle, airplane, bus, train, truck, boat,
-# traffic light, fire hydrant, stop sign, parking meter, bench, bird, cat,
-# dog, horse, sheep, cow, elephant, bear, zebra, giraffe, backpack, umbrella,
-# handbag, tie, suitcase, frisbee, skis, snowboard, sports ball, kite,
-# baseball bat, baseball glove, skateboard, surfboard, tennis racket, bottle,
-# wine glass, cup, fork, knife, spoon, bowl, banana, apple, sandwich, orange,
-# broccoli, carrot, hot dog, pizza, donut, cake, chair, couch, potted plant,
-# bed, dining table, toilet, tv, laptop, mouse, remote, keyboard, cell phone,
-# microwave, oven, toaster, sink, refrigerator, book, clock, vase, scissors,
-# teddy bear, hair drier, toothbrush

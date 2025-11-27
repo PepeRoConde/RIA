@@ -1,5 +1,6 @@
 from robobopy.Robobo import Robobo
 from robobosim.RoboboSim import RoboboSim
+from robobopy_videostream.RoboboVideo import RoboboVideo
 from utils import muestra
 import random
 import numpy as np
@@ -12,11 +13,14 @@ def init_Robobo(ip='localhost'):
 def init_RoboboSim(ip='localhost'):
     return RoboboSim(ip)
 
+def init_RoboboVideo(ip='localhost'):
+    return RoboboVideo(ip) 
+
 def _get_xy(Entorno):
 
     if Entorno.mundo_real:
         # Usar cámara para detectar el objeto
-        frame = Entorno.camara.get_frame()
+        frame = Entorno.get_frame()
         if frame is None:
             return np.array([-1, -1])
         
@@ -43,7 +47,7 @@ def _get_tamano_blob(Entorno):
 
     if Entorno.mundo_real:
         # Usar cámara
-        frame = Entorno.camara.get_frame()
+        frame = Entorno.get_frame()
         if frame is None:
             return np.array([-1])
         
@@ -58,6 +62,8 @@ def _get_tamano_blob(Entorno):
                 return np.array([blob.size])
         return np.array([-1])
 
+def _get_robobo_frame(video):
+    return video.getImageWithMetadata()[0]
 
 def _get_object_xz(Entorno):
     """
@@ -189,3 +195,4 @@ def mover_blob_random_walk(entorno, dx, dz):
             )
     
     return None
+
