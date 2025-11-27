@@ -19,8 +19,8 @@ def init_RoboboVideo(ip='localhost'):
 def _get_xy(Entorno):
 
     if Entorno.mundo_real:
-        # Usar cámara para detectar el objeto
-        frame = Entorno.get_frame()
+
+        frame = _get_robobo_frame(Entorno.video)
         if frame is None:
             return np.array([-1, -1])
         
@@ -47,7 +47,7 @@ def _get_tamano_blob(Entorno):
 
     if Entorno.mundo_real:
         # Usar cámara
-        frame = Entorno.get_frame()
+        frame = _get_robobo_frame(Entorno.video)
         if frame is None:
             return np.array([-1])
         
@@ -63,7 +63,7 @@ def _get_tamano_blob(Entorno):
         return np.array([-1])
 
 def _get_robobo_frame(video):
-    return video.getImageWithMetadata()[0]
+    return video.getImage()
 
 def _get_object_xz(Entorno):
     """
@@ -153,7 +153,7 @@ def reset(Entorno):
         Entorno.sim.resetSimulation()
         Entorno.sim.wait(1)
     
-    Entorno.robocop.moveTiltTo(110, 100, wait=False)
+    Entorno.robocop.moveTiltTo(degrees=110, speed=50, wait=True)
 
 
 def mover_blob_random_walk(entorno, dx, dz):

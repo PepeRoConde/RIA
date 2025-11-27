@@ -34,8 +34,10 @@ class Entorno(gym.Env):
         self.mundo_real = mundo_real
         self.visualizar_detecciones = visualizar_detecciones
 
+        print(ip)
         self.robocop = RoboboAPI.init_Robobo(ip)
         self.robocop.connect()
+        print('conectado!')
 
         if not self.mundo_real:
             self.sim = RoboboAPI.init_RoboboSim(ip)
@@ -47,15 +49,20 @@ class Entorno(gym.Env):
 
         else:
             self.sim = None
+            print('antes de video')
             self.video = RoboboAPI.init_RoboboVideo(ip)
+            print('despues de video')
             self.video.connect()
+            self.robocop.startStream()
 
             if camara is None:
                 #raise ValueError("Se requiere una cámara para mundo_real=True")
                 self.get_frame = RoboboAPI._get_robobo_frame(self.video)
             else:
                 self.get_frame = camara.get_frame
-            
+
+            print('-')
+
             # Inicializar el sensor de objeto basado en cámara
             from SensorObjeto import SensorObjeto
             self.sensor_objeto = SensorObjeto(
@@ -130,6 +137,8 @@ class Entorno(gym.Env):
 
         RoboboAPI.reset(self)
 
+        print('klkk')
+
         self.numero_de_pasos = 1
 
         # Los métodos hablan con robocop/cámara y lo meten en las variables
@@ -137,13 +146,16 @@ class Entorno(gym.Env):
         self._IR = RoboboAPI._get_IR(self)
         self._tamano_blob = RoboboAPI._get_tamano_blob(self)
 
+        print('-l-l-l-')
         # Guardar posición inicial del objeto
         self.xy_objeto_episodio.append(RoboboAPI._get_object_xz(self))
         
+        print('-4-4-4-')
         # Guardar posición inicial del robot
         robot_xy = RoboboAPI._get_robot_xz(self)  
         self.xy_robot_episodio.append(robot_xy)
 
+        print('-5-5-5-')
         observacion = self._get_observacion()
         info = self._get_info()
 
