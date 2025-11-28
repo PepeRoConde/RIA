@@ -4,7 +4,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
 \usepackage{graphicx}
-\usepackage{amsmath}
 \usepackage{amsmath,amssymb}  
 \usepackage{geometry}
 \usepackage{float}
@@ -15,9 +14,9 @@
 \usepackage{xcolor}
 
 % Configuración de página
-\geometry{a4paper, margin=2cm}
+\geometry{a4paper, margin=1cm}
 \setlength{\parindent}{0pt}
-\setlength{\parskip}{6pt}
+\setlength{\parskip}{12pt}
 
 % Configuración de código
 \lstset{
@@ -28,60 +27,61 @@
 }
 
 % Título y autores
-\title{\textbf{Práctica 3: Detección en tiempo real}}
-\author{Marcelo Ferreiro Sánchez \\ Pepe Romero Conde}
-\date{\today}
+\title{\textsc{Práctica 3: Detección en tiempo real}}
+\author{Marcelo Ferreiro Sánchez \& Pepe Romero Conde}
+\date{}
 
 \begin{document}
 
 \maketitle
 
-\section{Práctica 3.1: Seguimiento de Objeto Estático}
 
-\subsection{Definición del Problema}
+\section{Definición del Problema}
 
-Esta práctica que se presenta en dos partes, la primera consiste de la
-implementación de un sistema de detección de posición corporal mediante el cual
-podamos controlar al robot robobo, mientras que el objetivo de la siguiente es
+Esta práctica se presenta en dos partes. La primera consiste de la
+implementación de un sistema de detección de pose corporal mediante el cual
+podamos controlar al robot robobo, el \textcolor{violet}{telecontrol}. El objetivo de la siguiente parte es
 dotarlo de un sistema de detección de objetos gracias al cual poder adaptar la
-política de la Práctica 1 para que, al encontrar un objeto objetivo, se active
-la misma y se acerque activamente al mismo.
+\textcolor{cyan}{política de la Práctica 1} para que, al encontrar un objeto (en nuestro caso una botella), se active
+la misma y se acerque activamente a la botella.
 
 
-\subsection{Estructura de la solución propuesta}
+\section{Estructura de la solución propuesta}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=.8\linewidth]{../diagramas/marce.png}
+    \includegraphics[width=1\linewidth]{../diagramas/bueno.png}
     \caption{Diagrama de flujo del sistema. Para cada \texttt{step()}, la \texttt{observación} del mundo real (conformada por el estado interno del Robot y de lo que ve por la cámara) se usa para decidir que subsistema tomará la siguiente acción. 
-    Si no se ve al objeto, tomará el control el \textcolor{violet}{modelo telecontrol}, si no la \textcolor{cyan}{política adaptada de la Práctica 1}. hola}
+    Si no se ve al objeto, tomará el control el \textcolor{violet}{modelo telecontrol}, si no la \textcolor{cyan}{política adaptada de la Práctica 1}.}
     \label{fig:diagrama}
 \end{figure}
 
-En esta práctica, para mantener la coherencia con la P1, decidimos continuar
-utilizando el entorno definido en la misma (Clase entorno que hereda de la clase
-\texttt{gym.Env}) tanto para la ejecución de la política como para el movimiento
-por telecontrol.
+En esta práctica, para mantener la coherencia con la P1 (y en general gestionar exitosamente las dos partes de la práctica) decidimos continuar
+utilizando el entorno definido en la P1 (clase Entorno disponible en \texttt{Entorno.py} que hereda de la clase
+\texttt{gym.Env} de Gymnasium) tanto para la ejecución de la política como para el movimiento
+por telecontrol. Como se aprecia en la figura \ref{fig:diagrama} este componente devuelve la observación al \emph{router} para saber que subsistema hará \texttt{.predict()} en el siguiente paso (si fuese la política, esta también recibiría la observación del entorno). Además recibe las acciones de ambos sistemas, según corresponda.
 
 Para gestionar el cuándo y cómo cambiar del modelo de telecontrol se creó una
 clase Modelo con un método \texttt{predict()}, el cual, en caso de estar viendo
-el objeto objetivo, llamará a la política de la P1 y en caso contrario manejará
-el robobo por telecontrol (YOLO - pose). La lógica para saber si el robot ve el objeto
+el objeto objetivo, llamará a la política de la \textcolor{cyan}{P1} y en caso contrario manejará
+el robobo por \textcolor{violet}{telecontrol}. La lógica para saber si el robot ve el objeto
 objetivo se maneja gracias a la función \texttt{esta\_viendo()}, que llamará al
 YOLO de detección de objetos para averiguar si existe una instancia del objetivo.
 
+Una vez discutidos el Entorno y el \emph{router}, nos queda hablar de los subsistemas: 
+
 
 \begin{itemize}
-	\item \emph{\textcolor{violet}{Modelo Telecontrol:}}
-	\item \emph{\textcolor{cyan}{Modelo con pólitica de la P1:}}
+	\item \emph{\textcolor{violet}{Modelo Telecontrol:}} Cuenta con un modelo YOLO que devuelve una serie de once \emph{keypoints}. Con estos a través de un Sistema Experto (SE) se transforma esa entrada de $\mathbb{R}^{11\times2}$ a la acción a tomar. Como vimos en las anteriores prácticas, nosotros la definimos como $(avance, giro)$, de forma que podríamos decir que: $$SE: \mathbb{R}^{11\times2}\rightarrow \mathbb{R}^{2}$$ Si bien esta caracterización parece compleja, los valores del SE, fácilmente se pudieron encontrar a mano.
+	\item \emph{\textcolor{cyan}{Modelo con política de la P1:}} este subsistema comparte la componente de YOLO (en este caso de detección de objetos y en el anterior de pose), la cual nos vale para subministrarle a la política $\pi_{theta}$ lo que necesita, en nuestro caso es responder a estas dos preguntas: ¿Dónde está la botella? ¿Cuánto de grande es la botella? (ver figura \ref{fig:diagrama}). Adicionalemente hemos implentado que el YOLO de la webcam, es decir, el del telecontrol solo esté activo (y en general las lecturas de la webcam) cuando no se vea a la botella. Por eso en el video subministrado podréis ver que cuando en la terminal pone \texttt{Robot dirigido por: POLITICA P1} solo se graba con la cámara de la política. 
 \end{itemize}
 
 
 
-\subsection{Adaptaciones a entorno real}
+\section{Adaptaciones al entorno real}
 
 
-Hubieron de hacerse algunos cambios a la representación de las acciones y del
-espacio de observaciones del entorno, tales como, por parte de las acciones del
+Se hicieron algunos cambios a la representación al espacio de las acciones y 
+observaciones del entorno, tales como, por parte de las acciones del
 telecontrol, transformarlas al formato en que el entorno las representa y, por
 parte de la detección de objetos, se tuvo que buscar formas de representar las
 coordenadas en pantalla del objetivo y su tamaño. 
@@ -92,7 +92,7 @@ valores en [0,100] para el valor de cada eje. De forma similar, el tamaño se
 calculó como el área del mismo rectángulo.
 
 La noción de 3D para Robobo se ve supeditada por el
-\texttt{Enorno.observacion[`tamano\_blob']}, es lo unico que tiene para saber si
+\texttt{Entorno.observacion[`tamano\_blob']}, es lo unico que tiene para saber si
 esta cerca o lejos. Por eso hemos tenido que diseñar el sistema de una forma
 modular y con un archivo \texttt{config.yaml} para la fácil configuración de
 estos (muchos) hiperparámetros . También cuestiones relacionadas con la
@@ -102,7 +102,7 @@ haciéndolo parecerse al máximo a su comportamiento en simulador.
 
 
 
-\subsection{Resultados y conclusiones}
+\section{Resultados y conclusiones}
 Realizando las pruebas finales en el mundo real, se pudo comprobar como se
 consiguió un sistema de telecontrol adecuado, si bien con algo de latencia
 debido al tiempo que consume el sistema YOLO en detectar los puntos clave del
@@ -112,7 +112,7 @@ En cuanto al comportamiento de la detección de objetos y activación de la
 política, el robot la activa con bastante rapidez y es capaz de acercarse al
 objeto. También, en caso de perder al mismo, el sistema de telecontrol vuelve a
 ser el vigente rápidamente, permitiendo así salvar algunas situaciones en las
-que el YOLO puede fallar, prediciendo que no hay botella durante la ejecución de
+que la política puede fallar, prediciendo que no hay botella durante la ejecución de
 la política.
 
 
