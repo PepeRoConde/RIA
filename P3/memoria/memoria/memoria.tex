@@ -28,7 +28,7 @@
 }
 
 % Título y autores
-\title{\textbf{Práctica 2: Aprendizaje Evolutivo con NEAT\\Control de Robot Robobo}}
+\title{\textbf{Práctica 3: Detección en tiempo real}}
 \author{Marcelo Ferreiro Sánchez \\ Pepe Romero Conde}
 \date{\today}
 
@@ -36,125 +36,84 @@
 
 \maketitle
 
-\section{Práctica 2.1: Seguimiento de Objeto Estático}
+\section{Práctica 3.1: Seguimiento de Objeto Estático}
 
 \subsection{Definición del Problema}
 
-El objetivo de esta subpráctica es desarrollar un controlador neuronal mediante el algoritmo NEAT (NeuroEvolution of Augmenting Topologies) que permita al robot Robobo seguir y acercarse a un cilindro rojo estático en el entorno de simulación.
-
-\subsection{Espacios de Estados y Acciones}
-
-\textbf{Espacio de Estados:} El estado del sistema se representa mediante un diccionario con cuatro componentes principales:
-
-\begin{itemize}
-    \item \textbf{blob xy:} Posición del objeto en la imagen, valores en el rango $[-1, 102]$, dimensión $\mathbb{R}^2$. El valor $[-1, -1]$ indica que el objeto no es visible.
-    \item \textbf{IR:} Lecturas de sensores infrarrojos frontal y trasero, valores en $[0, 10000]$, dimensión $\mathbb{R}^2$.
-    \item \textbf{tamaño blob:} Tamaño aparente del objeto en píxeles, rango $[0, 1000]$, dimensión $\mathbb{R}^1$.
-    \item \textbf{velocidad:} Velocidad actual de las ruedas izquierda y derecha, rango $[-2, 2]$, dimensión $\mathbb{R}^2$.
-\end{itemize}
+Esta práctica que se presenta en dos partes, la primera consiste de la
+implementación de un sistema de detección de posición corporal mediante el cual
+podamos controlar al robot robobo, mientras que el objetivo de la siguiente es
+dotarlo de un sistema de detección de objetos gracias al cual poder adaptar la
+política de la Práctica 1 para que, al encontrar un objeto objetivo, se active
+la misma y se acerque activamente al mismo.
 
 
-El vector de observación completo tiene dimensión 7 y se obtiene mediante la concatenación: $\mathbf{o} = [\text{blob\_xy}, \text{IR}, \text{tamano\_blob}, \text{velocidad}]$.
+\subsection{Estructura de la solución propuesta}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.3\linewidth]{../diagramas/flujo.drawio_2.png}
+    \caption{Diagrama de flujo del sistema. Para cada \texttt{step()}, la \texttt{observación} del mundo real (conformada por el estado interno del Robot y de lo que ve por la cámara) se usa para decidir que subsistema tomará la siguiente acción. 
+    Si no se ve al objeto, tomará el control el \color{orange}{modelo telecontrol}, si no la \color{blue}{política adaptada de la Práctica 1}.}
+    \label{fig:diagrama}
+\end{figure}
 
-\textbf{Espacio de Acciones:} El espacio de acciones es continuo bidimensional en $[-2, 2]^2$, donde cada acción $\mathbf{a} = [a_1, a_2]$ representa:
-\begin{itemize}
-    \item $a_1$: Incremento de avance recto
-    \item $a_2$: Incremento de giro hacia la derecha
-\end{itemize}
+En esta práctica, para mantener la coherencia con la P1, decidimos continuar
+utilizando el entorno definido en la misma (Clase entorno que hereda de la clase
+\texttt{gym.Env}) tanto para la ejecución de la política como para el movimiento
+por telecontrol.
 
-Las velocidades de las ruedas se calculan como:
-\begin{align}
-v_{\text{izq}}(t+1) &= \text{clip}(v_{\text{izq}}(t) + a_1 + a_2, -2, 2)\\
-v_{\text{der}}(t+1) &= \text{clip}(v_{\text{der}}(t) + a_1 - a_2, -2, 2)
-\end{align}
-
-\subsection{Función de Fitness}
-
-La función de fitness diseñada combina múltiples objetivos mediante una suma ponderada:
-
-\begin{equation}
-F = \alpha_1 \cdot e^{-(x-50)^2} + \alpha_2 \cdot e^{-\left(\frac{d}{\sigma}\right)^2} - \alpha_3 \cdot \max(0, \text{IR}_{\text{atras}}-58) + \alpha_4 \cdot s
-\end{equation}
-
-donde:
-\begin{itemize}
-    \item $x$: Posición horizontal del blob en la imagen (centrado en 50)
-    \item $d$: Distancia euclidiana 3D entre robot y objeto
-    \item $\text{IR}_{\text{atras}}$: Lectura del sensor infrarrojo trasero
-    \item $s$: Tamaño del blob en píxeles
-    \item $\alpha_1, \alpha_2, \alpha_3, \alpha_4$: Pesos de ponderación
-    \item $\sigma$: Parámetro de escala para la distancia
-\end{itemize}
-
-\textbf{Justificación:} Los dos primeros términos (gaussianos) premian mantener el objeto centrado en la visión y reducir la distancia al objetivo. El tercer término penaliza el movimiento hacia atrás. El cuarto término recompensa cuando el objeto se ve más grande (está más cerca). Los valores utilizados fueron: $\alpha_1 = 0.5$, $\alpha_2 = 0.5$, $\alpha_3 = 0.00001$, $\alpha_4 = 0.1$, $\sigma = 15$.
-
-\subsection{Implementación y Resultados}
-
-La implementación utiliza la librería NEAT-Python con los siguientes parámetros clave:
-\begin{itemize}
-    \item Población: [Falta]
-    \item Generaciones: [Falta]
-    \item Función de activación: [Falta]
-    \item Pasos por episodio: [Falta]
-\end{itemize}
-
-% DESCOMENTAR cuando tengas las imágenes en la carpeta graficas/
-%\begin{figure}[H]
-%    \centering
-%    \includegraphics[width=0.8\textwidth]{graficas/generaciones_genoma.png}
-%    \caption{Evolución del fitness a lo largo de las generaciones. Se muestran los valores medio, máximo y mínimo por generación, junto con la desviación estándar. Se observa una convergencia clara hacia valores óptimos.}
-%    \label{fig:fitness_gen_21}
-%\end{figure}
-
-%\begin{figure}[H]
-%    \centering
-%    \includegraphics[width=0.7\textwidth]{graficas/genoma.svg}
-%    \caption{Arquitectura de la red neuronal del mejor individuo. Los nodos grises representan las entradas, los azules las salidas. El grosor de las conexiones indica el peso absoluto, y el color (verde/rojo) indica el signo (positivo/negativo).}
-%    \label{fig:red_21}
-%\end{figure}
-
-\textbf{Calidad de la Solución:} El robot converge consistentemente hacia el objetivo, manteniéndolo centrado en su campo de visión. El aprendizaje se completa en aproximadamente [X] generaciones. La solución muestra robustez ante perturbaciones menores en la posición inicial.
-
-\section{Práctica 2.2: Objeto en Movimiento Aleatorio}
-
-\subsection{Modificaciones y Desafíos}
-
-En esta subpráctica, el cilindro rojo se mueve aleatoriamente mediante un random walk con pasos de $\pm$\texttt{velocidad\_blob} metros en las direcciones $x$ y $z$. Este comportamiento se implementa en la función \texttt{mover\_blob\_random\_walk} del módulo \texttt{RoboboAPI}.
-
-El principal desafío es que el robot debe adaptarse continuamente a un objetivo móvil e impredecible, requiriendo una política de control más reactiva y robusta que en el caso estático.
-
-\subsection{Resultados y Análisis}
-
-%\begin{figure}[H]
-%    \centering
-%    \includegraphics[width=0.75\textwidth]{graficas/trayectorias_22.png}
-%    \caption{Trayectorias del robot (azul) y del objeto (rojo) en el plano XZ durante un episodio de validación. Se aprecia cómo el robot sigue activamente al objeto móvil.}
-%    \label{fig:traj_22}
-%\end{figure}
-
-Faltan los resultados
-
-\section{Práctica 2.3}
-
-\subsection{Diseño del Experimento}
-
-Esta aún no la quiero ni mirar.
-
-
-\subsection{Función de Fitness }
+Para gestionar el cuándo y cómo cambiar del modelo de telecontrol se creó una
+clase Modelo con un método \texttt{predict()}, el cual, en caso de estar viendo
+el objeto objetivo, llamará a la política de la P1 y en caso contrario manejará
+el robobo por telecontrol (YOLO - pose). La lógica para saber si el robot ve el objeto
+objetivo se maneja gracias a la función \texttt{esta\_viendo()}, que llamará al
+YOLO de detección de objetos para averiguar si existe una instancia del objetivo.
 
 
 
-\begin{equation}
-F = \alpha_1 \cdot e^{-(x-50)^2} + \alpha_2 \cdot e^{-\left(\frac{d}{\sigma}\right)^2} - \alpha_3 \cdot \max(0, \text{IR}_{\text{atras}}-58) + \alpha_4 \cdot s
-\end{equation}
-
-Se mantiene la misma forma funcional, pero se ajustan los hiperparámetros para favorecer la exploración inicial cuando el robot está lejos del objetivo.
-
-
-\subsection{Conclusiones}
 
 
 
-Non hai conclusións lo de 
+\subsection{Adaptaciones a entorno real}
+
+
+Hubieron de hacerse algunos cambios a la representación de las acciones y del
+espacio de observaciones del entorno, tales como, por parte de las acciones del
+telecontrol, transformarlas al formato en que el entorno las representa y, por
+parte de la detección de objetos, se tuvo que buscar formas de representar las
+coordenadas en pantalla del objetivo y su tamaño. 
+
+La forma de conseguir las coordenadas en pantalla, fue la del calcular el centro
+del rectángulo en que YOLO encuadra el objeto, y normalizar esa posición a
+valores en [0,100] para el valor de cada eje. De forma similar, el tamaño se
+calculó como el área del mismo rectángulo.
+
+La noción de 3D para Robobo se ve supeditada por el
+\texttt{Enorno.observacion[`tamano\_blob']}, es lo unico que tiene para saber si
+esta cerca o lejos. Por eso hemos tenido que diseñar el sistema de una forma
+modular y con un archivo \texttt{config.yaml} para la fácil configuración de
+estos (muchos) hiperparámetros . También cuestiones relacionadas con la
+brusquedad del giro han necesitado ser adaptadas. Todos estos cambios se
+hicieron com miras a conseguir un correcto desempeño del robot en el mundo real,
+haciéndolo parecerse al máximo a su comportamiento en simulador.
+
+
+
+\subsection{Resultados y conclusiones}
+Realizando las pruebas finales en el mundo real, se pudo comprobar como se
+consiguió un sistema de telecontrol adecuado, si bien con algo de latencia
+debido al tiempo que consume el sistema YOLO en detectar los puntos clave del
+cuerpo del usuario y la latencia inherente a la comunicación inalámbrica.
+
+En cuanto al comportamiento de la detección de objetos y activación de la
+política, el robot la activa con bastante rapidez y es capaz de acercarse al
+objeto. También, en caso de perder al mismo, el sistema de telecontrol vuelve a
+ser el vigente rápidamente, permitiendo así salvar algunas situaciones en las
+que el YOLO puede fallar, prediciendo que no hay botella durante la ejecución de
+la política.
+
+
+
+
+
 \end{document}
