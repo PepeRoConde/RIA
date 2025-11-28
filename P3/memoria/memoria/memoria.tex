@@ -15,7 +15,7 @@
 \usepackage{xcolor}
 
 % Configuración de página
-\geometry{a4paper, margin=2.5cm}
+\geometry{a4paper, margin=2cm}
 \setlength{\parindent}{0pt}
 \setlength{\parskip}{6pt}
 
@@ -51,9 +51,9 @@ la misma y se acerque activamente al mismo.
 \subsection{Estructura de la solución propuesta}
 \begin{figure}[H]
     \centering
-    \includegraphics[width=1.3\linewidth]{../diagramas/flujo.drawio_2.png}
+    \includegraphics[width=.8\linewidth]{../diagramas/marce.png}
     \caption{Diagrama de flujo del sistema. Para cada \texttt{step()}, la \texttt{observación} del mundo real (conformada por el estado interno del Robot y de lo que ve por la cámara) se usa para decidir que subsistema tomará la siguiente acción. 
-    Si no se ve al objeto, tomará el control el \color{orange}{modelo telecontrol}, si no la \color{blue}{política adaptada de la Práctica 1}.}
+    Si no se ve al objeto, tomará el control el \textcolor{violet}{modelo telecontrol}, si no la \textcolor{cyan}{política adaptada de la Práctica 1}. hola}
     \label{fig:diagrama}
 \end{figure}
 
@@ -70,7 +70,10 @@ objetivo se maneja gracias a la función \texttt{esta\_viendo()}, que llamará a
 YOLO de detección de objetos para averiguar si existe una instancia del objetivo.
 
 
-
+\begin{itemize}
+	\item \emph{\textcolor{violet}{Modelo Telecontrol:}}
+	\item \emph{\textcolor{cyan}{Modelo con pólitica de la P1:}}
+\end{itemize}
 
 
 
