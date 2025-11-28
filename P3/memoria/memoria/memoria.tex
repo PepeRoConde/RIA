@@ -15,7 +15,7 @@
 
 % Configuración de página
 \geometry{a4paper, margin=1cm}
-\setlength{\parindent}{0pt}
+\setlength{\parindent}{20pt}
 \setlength{\parskip}{12pt}
 
 % Configuración de código
@@ -40,7 +40,7 @@
 
 Esta práctica se presenta en dos partes. La primera consiste de la
 implementación de un sistema de detección de pose corporal mediante el cual
-podamos controlar al robot robobo, el \textcolor{violet}{telecontrol}. El objetivo de la siguiente parte es
+podemos controlar al robot robobo, el \textcolor{violet}{telecontrol}. El objetivo de la siguiente parte es
 dotarlo de un sistema de detección de objetos gracias al cual poder adaptar la
 \textcolor{cyan}{política de la Práctica 1} para que, al encontrar un objeto (en nuestro caso una botella), se active
 la misma y se acerque activamente a la botella.
@@ -50,15 +50,15 @@ la misma y se acerque activamente a la botella.
 \begin{figure}[H]
     \centering
     \includegraphics[width=1\linewidth]{../diagramas/bueno.png}
-    \caption{Diagrama de flujo del sistema. Para cada \texttt{step()}, la \texttt{observación} del mundo real (conformada por el estado interno del Robot y de lo que ve por la cámara) se usa para decidir que subsistema tomará la siguiente acción. 
-    Si no se ve al objeto, tomará el control el \textcolor{violet}{modelo telecontrol}, si no la \textcolor{cyan}{política adaptada de la Práctica 1}.}
+    \caption{Diagrama de flujo del sistema. Para cada \texttt{step()}, la \texttt{observación} del mundo real (conformada por el estado interno del Robot y de lo que ve por la cámara) se usa para decidir qué subsistema tomará la siguiente acción. 
+    Si no se ve al objeto, tomará el control el \textcolor{violet}{modelo telecontrol}, si no, la \textcolor{cyan}{política adaptada de la Práctica 1}.}
     \label{fig:diagrama}
 \end{figure}
 
 En esta práctica, para mantener la coherencia con la P1 (y en general gestionar exitosamente las dos partes de la práctica) decidimos continuar
 utilizando el entorno definido en la P1 (clase Entorno disponible en \texttt{Entorno.py} que hereda de la clase
 \texttt{gym.Env} de Gymnasium) tanto para la ejecución de la política como para el movimiento
-por telecontrol. Como se aprecia en la figura \ref{fig:diagrama} este componente devuelve la observación al \emph{router} para saber que subsistema hará \texttt{.predict()} en el siguiente paso (si fuese la política, esta también recibiría la observación del entorno). Además recibe las acciones de ambos sistemas, según corresponda.
+por telecontrol. Como se aprecia en la figura \ref{fig:diagrama} este componente devuelve la observación al \emph{router} para saber qué subsistema hará \texttt{.predict()} en el siguiente paso (si fuese la política, esta también recibiría la observación del entorno). Además recibe las acciones de ambos sistemas, según corresponda.
 
 Para gestionar el cuándo y cómo cambiar del modelo de telecontrol se creó una
 clase Modelo con un método \texttt{predict()}, el cual, en caso de estar viendo

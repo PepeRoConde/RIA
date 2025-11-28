@@ -1,0 +1,51 @@
+############################
+#
+# Cambiar a 0 si no funciona
+src_webcam: 1
+#
+############################
+
+
+mundo_real: True
+ruta_politica: "politicas/politica_01.zip"
+clase_objeto: 'bottle' 
+visualizar_detecciones: true 
+ip: "172.20.10.3"
+
+frame_x: 600
+frame_y: 400
+factor_tamano: 0.37
+
+target_fps: 30
+
+entorno:
+  pasos_por_episodio: 10000
+  alpha1: 0.5
+  alpha2: 0.5
+  alpha3: 0.00001
+  alpha4: 0.1
+  sigma: 15
+  velocidad_blob: 0
+
+performance:
+  frame_skip_telecontrol: 0
+  frame_skip_detection: 0
+
+telecontrol:
+  velocidad_base: 20
+  factor_normalizacion: 0.1
+  
+  deteccion_gestos:
+    umbral_brazo_arriba: 0.5
+    umbral_brazo_abajo: 1.0
+    umbral_manos_juntas: 0.5
+    umbral_brazos_separados: 1.5
+    umbral_manos_nivel: 0.2
+    umbral_manos_pecho: 0.3
+  
+  ratios_movimiento:
+    ratio_avance_giro: 0.37
+    ratio_rotacion_giro: 0.5
+    ratio_adelante: 1.0
+    ratio_atras: 1.0
+
