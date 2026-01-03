@@ -22,6 +22,18 @@ sp {maze-navigator*propose*move*forward
    (<o> ^name move
         ^direction forward)}
 
+# Reject moving forward when blocked
+sp {maze-navigator*reject*move*forward-blocked
+   "Reject moving forward when front is wall"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o> +)
+   (<il> ^sensors.front wall)
+   (<o> ^name move
+        ^direction forward)
+-->
+   (<s> ^operator <o> -)}
+
 ##################################################
 # TURNING OPERATORS
 ##################################################
@@ -97,8 +109,8 @@ sp {maze-navigator*prefer*turn-right*when-left-forward-blocked
               ^right clear)
    (<o1> ^name turn
          ^direction right)
-   (<o2> ^name turn
-         ^direction left)
+   (<o2> ^name << move turn >>)
+   (<o2> ^direction <> right)
 -->
    (<s> ^operator <o1> > <o2>)}
 

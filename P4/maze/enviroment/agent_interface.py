@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Set, Tuple
 
 # Add Soar to Python path (adjust based on your Soar installation)
-sys.path.append(str(Path(__file__).parent.parent.parent / "SoarSuite_9.6.2-Multiplatform" / "bin"))
+sys.path.append(r"C:\Users\marce\Desktop\euu\cuarto\robotica\SoarSuite_9.6.4-Multiplatform\bin")
 import Python_sml_ClientInterface as sml
 
 from .maze import Maze
@@ -98,53 +98,66 @@ class MazeAgent:
     def _update_input_link(self):
         """Update Soar's input-link with current state."""
         # Clear old WMEs if they exist
+        # Only destroy top-level WMEs - child WMEs are automatically destroyed
         if self.wmes:
-            for wme in self.wmes.values():
-                wme.DestroyWME()
+            # Destroy top-level WMEs (direct children of input-link)
+            for key in ['pos-x', 'pos-y', 'target-x', 'target-y', 'sensors',
+                       'orientation', 'discovered-count', 'distance-x', 'distance-y',
+                       'manhattan-distance', 'at-target']:
+                if key in self.wmes:
+                    self.agent.DestroyWME(self.wmes[key])
             self.wmes.clear()
-        
+
         # Add position
         self.wmes['pos-x'] = self.input_link.CreateIntWME("pos-x", self.x)
         self.wmes['pos-y'] = self.input_link.CreateIntWME("pos-y", self.y)
-        
+
         # Add target position
         target_x, target_y = self.maze.target_pos
         self.wmes['target-x'] = self.input_link.CreateIntWME("target-x", target_x)
         self.wmes['target-y'] = self.input_link.CreateIntWME("target-y", target_y)
-        
+
         # Add sensors (relative to agent orientation for DFS)
         if self.strategy == "dfs":
             sensors = self._get_oriented_sensors()
             sensor_id = self.input_link.CreateIdWME("sensors")
             self.wmes['sensors'] = sensor_id
-            self.wmes['sensor-front'] = sensor_id.CreateStringWME("front", "wall" if sensors['front'] else "clear")
-            self.wmes['sensor-right'] = sensor_id.CreateStringWME("right", "wall" if sensors['right'] else "clear")
-            self.wmes['sensor-back'] = sensor_id.CreateStringWME("back", "wall" if sensors['back'] else "clear")
-            self.wmes['sensor-left'] = sensor_id.CreateStringWME("left", "wall" if sensors['left'] else "clear")
-            
+            # Child WMEs are automatically destroyed when parent is destroyed, so no need to track them
+            front_val = "wall" if sensors['front'] else "clear"
+            right_val = "wall" if sensors['right'] else "clear"
+            back_val = "wall" if sensors['back'] else "clear"
+            left_val = "wall" if sensors['left'] else "clear"
+
+
+            sensor_id.CreateStringWME("front", front_val)
+            sensor_id.CreateStringWME("right", right_val)
+            sensor_id.CreateStringWME("back", back_val)
+            sensor_id.CreateStringWME("left", left_val)
+
             # Add orientation
-            self.wmes['orientation'] = self.input_link.CreateStringWME("orientation", 
+            self.wmes['orientation'] = self.input_link.CreateStringWME("orientation",
                                                                         self.ORIENTATION_NAMES[self.orientation])
         else:
             # Absolute sensors for naive strategy
             sensors = self.maze.get_sensors(self.x, self.y)
             sensor_id = self.input_link.CreateIdWME("sensors")
             self.wmes['sensors'] = sensor_id
-            self.wmes['wall-up'] = sensor_id.CreateStringWME("up", "wall" if sensors['up'] else "clear")
-            self.wmes['wall-down'] = sensor_id.CreateStringWME("down", "wall" if sensors['down'] else "clear")
-            self.wmes['wall-left'] = sensor_id.CreateStringWME("left", "wall" if sensors['left'] else "clear")
-            self.wmes['wall-right'] = sensor_id.CreateStringWME("right", "wall" if sensors['right'] else "clear")
-        
+            # Child WMEs are automatically destroyed when parent is destroyed, so no need to track them
+            sensor_id.CreateStringWME("up", "wall" if sensors['up'] else "clear")
+            sensor_id.CreateStringWME("down", "wall" if sensors['down'] else "clear")
+            sensor_id.CreateStringWME("left", "wall" if sensors['left'] else "clear")
+            sensor_id.CreateStringWME("right", "wall" if sensors['right'] else "clear")
+
         # Add discovered cells count
         self.wmes['discovered-count'] = self.input_link.CreateIntWME("discovered-count", len(self.discovered))
-        
+
         # Calculate distances to target
         dx = abs(target_x - self.x)
         dy = abs(target_y - self.y)
         self.wmes['distance-x'] = self.input_link.CreateIntWME("distance-x", dx)
         self.wmes['distance-y'] = self.input_link.CreateIntWME("distance-y", dy)
         self.wmes['manhattan-distance'] = self.input_link.CreateIntWME("manhattan-distance", dx + dy)
-        
+
         # At target?
         at_target = (self.x, self.y) == self.maze.target_pos
         self.wmes['at-target'] = self.input_link.CreateStringWME("at-target", "yes" if at_target else "no")
@@ -170,34 +183,53 @@ class MazeAgent:
     
     def process_output(self):
         """Process commands from Soar's output-link."""
-        num_commands = self.agent.GetNumberCommands()
-        
-        for i in range(num_commands):
-            command = self.agent.GetCommand(i)
-            command_name = command.GetCommandName()
-            
-            if command_name == "move":
-                direction = command.GetParameterValue("direction")
-                success = self._execute_move(direction)
-                
-                # Mark command as complete
-                if success:
-                    command.AddStatusComplete()
-                else:
-                    command.AddStatusError()
-            
-            elif command_name == "turn":
-                direction = command.GetParameterValue("direction")
-                self._execute_turn(direction)
-                command.AddStatusComplete()
+        try:
+            output_link = self.agent.GetOutputLink()
+            if output_link is None:
+                return
+
+            # Get all command WMEs to remove after processing
+            wmes_to_remove = []
+
+            # Iterate through output-link children to find commands
+            for i in range(output_link.GetNumberChildren()):
+                wme = output_link.GetChild(i)
+                attr = wme.GetAttribute()
+
+                # Process move and turn commands
+                if attr == "move" or attr == "turn":
+                    command_id = wme.ConvertToIdentifier()
+
+                    # Get direction
+                    direction_wme = command_id.FindByAttribute("direction", 0)
+                    if direction_wme:
+                        direction = direction_wme.GetValueAsString()
+
+                        # Execute command
+                        if attr == "move":
+                            self._execute_move(direction)
+                        elif attr == "turn":
+                            self._execute_turn(direction)
+
+                        # Mark for removal (remove the WME linking output-link to command)
+                        wmes_to_remove.append(wme)
+
+            # Remove processed commands by removing the link from output-link
+            for wme in wmes_to_remove:
+                self.agent.DestroyWME(wme)
+
+        except Exception as e:
+            print(f"ERROR in process_output: {e}")
+            import traceback
+            traceback.print_exc()
     
     def _execute_move(self, direction: str) -> bool:
         """
         Execute a move command.
-        
+
         Args:
             direction: 'forward', 'backward', or absolute ('up', 'down', 'left', 'right')
-            
+
         Returns:
             True if move successful, False otherwise
         """
@@ -208,9 +240,9 @@ class MazeAgent:
             elif direction == "backward":
                 direction = self._get_absolute_direction(2)
             # Otherwise assume it's already absolute
-        
+
         new_x, new_y = self.x, self.y
-        
+
         if direction == "up":
             new_y -= 1
         elif direction == "down":
@@ -222,22 +254,22 @@ class MazeAgent:
         else:
             print(f"Unknown direction: {direction}")
             return False
-        
+
         # Check if move is valid
         if self.maze.is_wall(new_x, new_y):
             print(f"Cannot move {direction} - wall detected")
             return False
-        
+
         # Execute move
         self.x, self.y = new_x, new_y
         self.path.append((self.x, self.y))
         self.discovered.add((self.x, self.y))
-        
+
         print(f"Moved {direction} to ({self.x}, {self.y})")
-        
+
         # Update input link with new state
         self._update_input_link()
-        
+
         return True
     
     def _execute_turn(self, direction: str):
@@ -280,8 +312,13 @@ class MazeAgent:
     
     def run_step(self):
         """Run one decision cycle."""
-        self.agent.RunSelf(1)
-        self.process_output()
+        try:
+            self.agent.RunSelf(1)
+            self.process_output()
+        except Exception as e:
+            print(f"ERROR in run_step: {e}")
+            import traceback
+            traceback.print_exc()
     
     def has_reached_target(self) -> bool:
         """Check if agent has reached the target."""

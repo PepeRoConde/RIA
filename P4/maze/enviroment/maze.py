@@ -81,12 +81,12 @@ class Maze:
             agent_pos: Current position of the agent (x, y)
             orientation: Agent's facing direction ('north', 'east', 'south', 'west')
         """
-        # Orientation symbols
+        # Orientation symbols (using ASCII for Windows compatibility)
         orientation_symbols = {
-            'north': '⏶',  # pointing up
-            'east': '⏵',   # pointing right
-            'south': '⏷',  # pointing down
-            'west': '⏴'    # pointing left
+            'north': '^',  # pointing up
+            'east': '>',   # pointing right
+            'south': 'v',  # pointing down
+            'west': '<'    # pointing left
         }
         
         print("\n" + "=" * (self.width * 2 + 1))
@@ -101,9 +101,9 @@ class Maze:
                 elif (x, y) == self.target_pos:
                     row += "T "  # Target
                 elif self.grid[y][x]:
-                    row += "█ "  # Wall
+                    row += "# "  # Wall
                 else:
-                    row += "  "  # Empty
+                    row += ". "  # Empty
             row += "|"
             print(row)
         print("=" * (self.width * 2 + 1))
