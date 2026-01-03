@@ -1,154 +1,208 @@
 ##################################################
-# NAVIGATION RULES
-# 
-# Rules that determine how the agent moves through the maze
+# LEFT-WALL FOLLOWING NAVIGATION
+#
+# The agent follows the left wall to navigate the maze.
+# Strategy: Always try left first, then straight, then right, then back.
 ##################################################
 
 ##################################################
-# OPERATOR: move
-# Proposes moving in a direction
+# ELABORATIONS: Compute relative directions
+# Based on current orientation, figure out which absolute direction
+# corresponds to left, straight, right, and back.
+##################################################
+
+# When facing NORTH (up)
+sp {elaborate*relative-directions*facing-north
+   "Compute relative directions when facing north"
+   (state <s> ^name maze-navigator
+              ^orientation north)
+-->
+   (<s> ^relative <rel>)
+   (<rel> ^left-is left
+          ^straight-is up
+          ^right-is right
+          ^back-is down)}
+
+# When facing EAST (right)
+sp {elaborate*relative-directions*facing-east
+   "Compute relative directions when facing east"
+   (state <s> ^name maze-navigator
+              ^orientation east)
+-->
+   (<s> ^relative <rel>)
+   (<rel> ^left-is up
+          ^straight-is right
+          ^right-is down
+          ^back-is left)}
+
+# When facing SOUTH (down)
+sp {elaborate*relative-directions*facing-south
+   "Compute relative directions when facing south"
+   (state <s> ^name maze-navigator
+              ^orientation south)
+-->
+   (<s> ^relative <rel>)
+   (<rel> ^left-is right
+          ^straight-is down
+          ^right-is left
+          ^back-is up)}
+
+# When facing WEST (left)
+sp {elaborate*relative-directions*facing-west
+   "Compute relative directions when facing west"
+   (state <s> ^name maze-navigator
+              ^orientation west)
+-->
+   (<s> ^relative <rel>)
+   (<rel> ^left-is down
+          ^straight-is left
+          ^right-is up
+          ^back-is right)}
+
+##################################################
+# OPERATOR PROPOSALS: Propose moves based on sensors
 ##################################################
 
 # Propose moving up
-sp {maze-navigator*propose*move*up
+sp {propose*move*up
    "Propose moving up if not blocked"
    (state <s> ^name maze-navigator
               ^io.input-link <il>)
-   (<il> ^sensors <sensors>
+   (<il> ^sensors <sens>
          ^at-target no)
-   (<sensors> ^up clear)
+   (<sens> ^up clear)
 -->
    (<s> ^operator <o> +)
    (<o> ^name move
-        ^direction up)}
+        ^direction up
+        ^new-orientation north)}
 
 # Propose moving down
-sp {maze-navigator*propose*move*down
+sp {propose*move*down
    "Propose moving down if not blocked"
    (state <s> ^name maze-navigator
               ^io.input-link <il>)
-   (<il> ^sensors <sensors>
+   (<il> ^sensors <sens>
          ^at-target no)
-   (<sensors> ^down clear)
+   (<sens> ^down clear)
 -->
    (<s> ^operator <o> +)
    (<o> ^name move
-        ^direction down)}
+        ^direction down
+        ^new-orientation south)}
 
 # Propose moving left
-sp {maze-navigator*propose*move*left
+sp {propose*move*left
    "Propose moving left if not blocked"
    (state <s> ^name maze-navigator
               ^io.input-link <il>)
-   (<il> ^sensors <sensors>
+   (<il> ^sensors <sens>
          ^at-target no)
-   (<sensors> ^left clear)
+   (<sens> ^left clear)
 -->
    (<s> ^operator <o> +)
    (<o> ^name move
-        ^direction left)}
+        ^direction left
+        ^new-orientation west)}
 
 # Propose moving right
-sp {maze-navigator*propose*move*right
+sp {propose*move*right
    "Propose moving right if not blocked"
    (state <s> ^name maze-navigator
               ^io.input-link <il>)
-   (<il> ^sensors <sensors>
+   (<il> ^sensors <sens>
          ^at-target no)
-   (<sensors> ^right clear)
+   (<sens> ^right clear)
 -->
    (<s> ^operator <o> +)
    (<o> ^name move
-        ^direction right)}
+        ^direction right
+        ^new-orientation east)}
 
 ##################################################
-# MOVEMENT PREFERENCES
-# Prefer directions that move toward target
+# LEFT-WALL FOLLOWING PREFERENCES
+# Prefer moves in this order: LEFT > STRAIGHT > RIGHT > BACK
 ##################################################
 
-# Prefer moving right if target is to the right
-sp {maze-navigator*prefer*move*right*toward-target
-   "Prefer moving right when target is to the right"
+# HIGHEST PRIORITY: Prefer turning/moving LEFT
+sp {prefer*move*left-relative
+   "Prefer moving to the left (relative to current orientation)"
    (state <s> ^name maze-navigator
-              ^io.input-link <il>
+              ^relative.left-is <left-dir>
               ^operator <o1> +
               ^operator <o2> +)
-   (<il> ^pos-x <x>
-         ^target-x > <x>)
    (<o1> ^name move
-         ^direction right)
+         ^direction <left-dir>)
    (<o2> ^name move
-         ^direction << left up down >>)
+         ^direction <> <left-dir>)
 -->
    (<s> ^operator <o1> > <o2>)}
 
-# Prefer moving left if target is to the left
-sp {maze-navigator*prefer*move*left*toward-target
-   "Prefer moving left when target is to the left"
+# SECOND PRIORITY: Prefer going STRAIGHT
+sp {prefer*move*straight-relative
+   "Prefer moving straight (relative to current orientation)"
    (state <s> ^name maze-navigator
-              ^io.input-link <il>
+              ^relative <rel>
               ^operator <o1> +
               ^operator <o2> +)
-   (<il> ^pos-x <x>
-         ^target-x < <x>)
+   (<rel> ^straight-is <straight-dir>
+          ^left-is <left-dir>)
    (<o1> ^name move
-         ^direction left)
+         ^direction <straight-dir>)
    (<o2> ^name move
-         ^direction << right up down >>)
+         ^direction <> <straight-dir>
+         ^direction <> <left-dir>)
 -->
    (<s> ^operator <o1> > <o2>)}
 
-# Prefer moving down if target is below
-sp {maze-navigator*prefer*move*down*toward-target
-   "Prefer moving down when target is below"
+# THIRD PRIORITY: Prefer turning/moving RIGHT
+sp {prefer*move*right-relative
+   "Prefer moving to the right (relative to current orientation)"
    (state <s> ^name maze-navigator
-              ^io.input-link <il>
+              ^relative <rel>
               ^operator <o1> +
               ^operator <o2> +)
-   (<il> ^pos-y <y>
-         ^target-y > <y>)
+   (<rel> ^right-is <right-dir>
+          ^back-is <back-dir>)
    (<o1> ^name move
-         ^direction down)
+         ^direction <right-dir>)
    (<o2> ^name move
-         ^direction << up left right >>)
--->
-   (<s> ^operator <o1> > <o2>)}
-
-# Prefer moving up if target is above
-sp {maze-navigator*prefer*move*up*toward-target
-   "Prefer moving up when target is above"
-   (state <s> ^name maze-navigator
-              ^io.input-link <il>
-              ^operator <o1> +
-              ^operator <o2> +)
-   (<il> ^pos-y <y>
-         ^target-y < <y>)
-   (<o1> ^name move
-         ^direction up)
-   (<o2> ^name move
-         ^direction << down left right >>)
+         ^direction <back-dir>)
 -->
    (<s> ^operator <o1> > <o2>)}
 
 ##################################################
 # APPLY MOVEMENT
-# Execute the movement command
+# Execute the movement and update orientation
 ##################################################
 
-sp {maze-navigator*apply*move
+sp {apply*move*execute
    "Execute a move command on the output-link"
    (state <s> ^name maze-navigator
               ^operator <o>
-              ^io.output-link <ol>)
+              ^io.output-link <ol>
+              ^orientation <old-orient>)
    (<o> ^name move
-        ^direction <dir>)
+        ^direction <dir>
+        ^new-orientation <new-orient>)
 -->
    (<ol> ^move <cmd>)
    (<cmd> ^direction <dir>)
-   (write (crlf) |Attempting to move: | <dir>)}
+   (write (crlf) |Moving | <dir> | (facing | <old-orient> | -> | <new-orient> |)| )}
+
+sp {apply*move*update-orientation
+   "Update agent orientation after successful move"
+   (state <s> ^name maze-navigator
+              ^operator <o>
+              ^orientation <old-orient>)
+   (<o> ^name move
+        ^new-orientation <new-orient>)
+-->
+   (<s> ^orientation <old-orient> -
+        ^orientation <new-orient>)}
 
 # Remove completed commands
-sp {maze-navigator*apply*move*remove-command
+sp {apply*move*remove-command
    "Remove completed move commands from output-link"
    (state <s> ^name maze-navigator
               ^io.output-link <ol>)

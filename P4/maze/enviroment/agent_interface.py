@@ -84,22 +84,24 @@ class MazeAgent:
  
     def _update_input_link(self):
         """Update Soar's input-link with current state."""
-        # Clear old WMEs if they exist
-        if self.wmes:
-            for wme in self.wmes.values():
-                wme.DestroyWME()
-            self.wmes.clear()
-        
+        # Clear old WMEs
+        for key in list(self.wmes.keys()):
+            if key != 'sensors':  # Don't destroy sensor_id yet
+                self.wmes[key].DestroyWME()
+        if 'sensors' in self.wmes:
+            self.wmes['sensors'].DestroyWME()
+        self.wmes.clear()
+
         # Add position
         self.wmes['pos-x'] = self.input_link.CreateIntWME("pos-x", self.x)
         self.wmes['pos-y'] = self.input_link.CreateIntWME("pos-y", self.y)
-        
+
         # Add target position
         target_x, target_y = self.maze.target_pos
         self.wmes['target-x'] = self.input_link.CreateIntWME("target-x", target_x)
         self.wmes['target-y'] = self.input_link.CreateIntWME("target-y", target_y)
-        
-        # Add sensors
+
+        # Add sensors structure
         sensors = self.maze.get_sensors(self.x, self.y)
         sensor_id = self.input_link.CreateIdWME("sensors")
         self.wmes['sensors'] = sensor_id
@@ -107,17 +109,17 @@ class MazeAgent:
         self.wmes['wall-down'] = sensor_id.CreateStringWME("down", "wall" if sensors['down'] else "clear")
         self.wmes['wall-left'] = sensor_id.CreateStringWME("left", "wall" if sensors['left'] else "clear")
         self.wmes['wall-right'] = sensor_id.CreateStringWME("right", "wall" if sensors['right'] else "clear")
-        
+
         # Add discovered cells count
         self.wmes['discovered-count'] = self.input_link.CreateIntWME("discovered-count", len(self.discovered))
-        
+
         # Calculate distances to target
         dx = abs(target_x - self.x)
         dy = abs(target_y - self.y)
         self.wmes['distance-x'] = self.input_link.CreateIntWME("distance-x", dx)
         self.wmes['distance-y'] = self.input_link.CreateIntWME("distance-y", dy)
         self.wmes['manhattan-distance'] = self.input_link.CreateIntWME("manhattan-distance", dx + dy)
-        
+
         # At target?
         at_target = (self.x, self.y) == self.maze.target_pos
         self.wmes['at-target'] = self.input_link.CreateStringWME("at-target", "yes" if at_target else "no")
@@ -125,15 +127,15 @@ class MazeAgent:
     def process_output(self):
         """Process commands from Soar's output-link."""
         num_commands = self.agent.GetNumberCommands()
-        
+
         for i in range(num_commands):
             command = self.agent.GetCommand(i)
             command_name = command.GetCommandName()
-            
+
             if command_name == "move":
                 direction = command.GetParameterValue("direction")
                 success = self._execute_move(direction)
-                
+
                 # Mark command as complete
                 if success:
                     command.AddStatusComplete()

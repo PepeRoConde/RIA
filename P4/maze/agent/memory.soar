@@ -1,89 +1,9 @@
 ##################################################
-# MEMORY MANAGEMENT RULES
-# 
-# Rules for remembering explored locations and
-# making better navigation decisions based on history
+# MONITORING AND DEBUGGING
+#
+# Simple monitoring rules for the left-wall following agent.
+# Memory tracking is not needed for basic wall-following.
 ##################################################
-
-##################################################
-# TRACK VISITED LOCATIONS
-##################################################
-
-sp {maze-navigator*elaborate*visited-location
-   "Remember current location as visited"
-   (state <s> ^name maze-navigator
-              ^io.input-link <il>)
-   (<il> ^pos-x <x>
-         ^pos-y <y>)
--->
-   (<s> ^visited-location <loc>)
-   (<loc> ^x <x>
-          ^y <y>)}
-
-##################################################
-# COMPUTE NEIGHBOR POSITIONS
-##################################################
-
-sp {maze-navigator*elaborate*neighbor-positions
-   "Compute the positions of neighboring cells"
-   (state <s> ^name maze-navigator
-              ^io.input-link <il>)
-   (<il> ^pos-x <x>
-         ^pos-y <y>)
--->
-   (<s> ^neighbor-pos <up>
-        ^neighbor-pos <down>
-        ^neighbor-pos <left>
-        ^neighbor-pos <right>)
-   (<up> ^direction up
-         ^x <x>
-         ^y (- <y> 1))
-   (<down> ^direction down
-           ^x <x>
-           ^y (+ <y> 1))
-   (<left> ^direction left
-           ^x (- <x> 1)
-           ^y <y>)
-   (<right> ^direction right
-            ^x (+ <x> 1)
-            ^y <y>)}
-
-##################################################
-# MARK MOVES TO VISITED LOCATIONS
-##################################################
-
-sp {maze-navigator*elaborate*move-to-visited
-   "Mark moves that lead to visited locations"
-   (state <s> ^name maze-navigator
-              ^operator <o> +
-              ^neighbor-pos <neighbor>
-              ^visited-location <vloc>)
-   (<o> ^name move
-        ^direction <dir>)
-   (<neighbor> ^direction <dir>
-               ^x <nx>
-               ^y <ny>)
-   (<vloc> ^x <nx>
-           ^y <ny>)
--->
-   (<o> ^leads-to-visited yes)}
-
-##################################################
-# EXPLORATION PREFERENCES (WEAKER)
-# Only prefer unvisited when no other factors apply
-##################################################
-
-sp {maze-navigator*prefer*unvisited-weakly
-   "Weakly prefer unvisited locations (can be overridden)"
-   (state <s> ^name maze-navigator
-              ^operator <o1> +
-              ^operator <o2> +)
-   (<o1> ^name move
-        -^leads-to-visited yes)
-   (<o2> ^name move
-         ^leads-to-visited yes)
--->
-   (<s> ^operator <o1> > <o2>)}
 
 ##################################################
 # PROGRESS MONITORING
@@ -93,23 +13,23 @@ sp {maze-navigator*monitor*progress
    "Print progress information every step"
    (state <s> ^name maze-navigator
               ^io.input-link <il>
-              ^operator <o>)
+              ^operator <o>
+              ^orientation <orient>)
    (<o> ^name move
         ^direction <dir>)
    (<il> ^pos-x <x>
          ^pos-y <y>
-         ^manhattan-distance <dist>
-         ^discovered-count <count>)
+         ^manhattan-distance <dist>)
 -->
-   (write (crlf) |Step: Moving | <dir> | from (| <x> |,| <y> |) | 
-          |Distance: | <dist> | Explored: | <count> (crlf))}
+   (write (crlf) |[Step] Position: (| <x> |,| <y> |) |
+          |Moving: | <dir> | Facing: | <orient> | Distance: | <dist> )}
 
 ##################################################
 # DEADLOCK DETECTION
 ##################################################
 
 sp {maze-navigator*detect*no-moves
-   "Detect when no moves are available"
+   "Detect when no moves are available (fully surrounded by walls)"
    (state <s> ^name maze-navigator
               ^io.input-link <il>)
    (<il> ^sensors <sensors>
@@ -119,5 +39,5 @@ sp {maze-navigator*detect*no-moves
               ^left wall
               ^right wall)
 -->
-   (write (crlf) |WARNING: Agent is stuck - no valid moves available!| (crlf))
+   (write (crlf) |ERROR: Agent is completely surrounded by walls!| (crlf))
    (halt)}

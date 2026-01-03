@@ -83,9 +83,9 @@ class Maze:
                 elif (x, y) == self.target_pos:
                     row += "T "  # Target
                 elif self.grid[y][x]:
-                    row += "█ "  # Wall
+                    row += "# "  # Wall
                 else:
-                    row += "  "  # Empty
+                    row += ". "  # Empty
             row += "|"
             print(row)
         print("=" * (self.width * 2 + 1))
