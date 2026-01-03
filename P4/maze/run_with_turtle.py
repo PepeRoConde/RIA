@@ -12,7 +12,7 @@ from enviroment.turtle_ui import MazeTurtleUI
 
 def run_simulation(strategy: str = "dfs", width: int = 10, height: int = 10,
                    wall_prob: float = 0.3, max_steps: int = 1000,
-                   delay: float = 0.1, cell_size: int = 40):
+                   delay: float = 0.1, cell_size: int = 40, debug: bool = False):
     """
     Run maze navigation simulation with Turtle visualization.
 
@@ -24,6 +24,7 @@ def run_simulation(strategy: str = "dfs", width: int = 10, height: int = 10,
         max_steps: Maximum steps before timeout
         delay: Delay between steps in seconds (0 for fastest)
         cell_size: Size of each cell in pixels
+        debug: Enable debug output
     """
     print("=" * 60)
     print(f"Soar Maze Navigator - {strategy.upper()} Strategy")
@@ -35,7 +36,7 @@ def run_simulation(strategy: str = "dfs", width: int = 10, height: int = 10,
 
     # Initialize agent
     print(f"Initializing Soar agent with {strategy} strategy...")
-    agent = MazeAgent(maze, strategy=strategy)
+    agent = MazeAgent(maze, strategy=strategy, debug=debug)
 
     if not agent.initialize_soar():
         print("Failed to initialize Soar agent!")
@@ -50,7 +51,7 @@ def run_simulation(strategy: str = "dfs", width: int = 10, height: int = 10,
     # Set initial agent position
     ui.update_agent_position(
         agent.x, agent.y,
-        agent.ORIENTATION_NAMES.get(agent.orientation) if strategy == "dfs" else None
+        agent.ORIENTATION_NAMES.get(agent.orientation) if strategy in ["dfs", "wall-follow"] else None
     )
     ui.mark_discovered(agent.discovered)
     ui.update_info(agent.get_stats())
@@ -78,14 +79,29 @@ def run_simulation(strategy: str = "dfs", width: int = 10, height: int = 10,
                 ui.show_completion_message(step_count, len(agent.discovered))
                 break
 
+            # Debug output before step
+            if debug:
+                sensors = agent._get_oriented_sensors() if strategy in ["dfs", "wall-follow"] else agent.maze.get_sensors(agent.x, agent.y)
+                print(f"\n--- Step {step_count + 1} ---")
+                print(f"Position: ({agent.x}, {agent.y})")
+                if strategy in ["dfs", "wall-follow"]:
+                    print(f"Orientation: {agent.ORIENTATION_NAMES[agent.orientation]}")
+                    print(f"Sensors: Front={sensors['front']}, Right={sensors['right']}, Back={sensors['back']}, Left={sensors['left']}")
+                else:
+                    print(f"Sensors: Up={sensors['up']}, Down={sensors['down']}, Left={sensors['left']}, Right={sensors['right']}")
+
             # Run one step
             agent.run_step()
             step_count += 1
 
+            # Debug output after step
+            if debug:
+                print(f"After step: Position=({agent.x}, {agent.y}), Orientation={agent.ORIENTATION_NAMES.get(agent.orientation, 'N/A')}")
+
             # Update UI
             ui.update_agent_position(
                 agent.x, agent.y,
-                agent.ORIENTATION_NAMES.get(agent.orientation) if strategy == "dfs" else None
+                agent.ORIENTATION_NAMES.get(agent.orientation) if strategy in ["dfs", "wall-follow"] else None
             )
             ui.mark_discovered(agent.discovered)
             ui.update_info(agent.get_stats())
@@ -128,9 +144,9 @@ def main():
 
     parser.add_argument(
         "--strategy",
-        choices=["naive", "dfs"],
-        default="dfs",
-        help="Navigation strategy (default: dfs)"
+        choices=["naive", "dfs", "wall-follow"],
+        default="wall-follow",
+        help="Navigation strategy (default: wall-follow)"
     )
 
     parser.add_argument(
@@ -175,6 +191,12 @@ def main():
         help="Cell size in pixels (default: 40)"
     )
 
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug output showing step-by-step details"
+    )
+
     args = parser.parse_args()
 
     run_simulation(
@@ -184,7 +206,8 @@ def main():
         wall_prob=args.walls,
         max_steps=args.max_steps,
         delay=args.delay,
-        cell_size=args.cell_size
+        cell_size=args.cell_size,
+        debug=args.debug
     )
 
 

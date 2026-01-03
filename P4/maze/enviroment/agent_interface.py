@@ -23,14 +23,15 @@ class MazeAgent:
     
     ORIENTATION_NAMES = {NORTH: 'north', EAST: 'east', SOUTH: 'south', WEST: 'west'}
     
-    def __init__(self, maze: Maze, agent_name: str = "MazeNavigator", strategy: str = "naive"):
+    def __init__(self, maze: Maze, agent_name: str = "MazeNavigator", strategy: str = "naive", debug: bool = False):
         self.maze = maze
         self.agent_name = agent_name
         self.strategy = strategy
-        
+        self.debug = debug
+
         # Agent position
         self.x, self.y = maze.start_pos
-        
+
         # Orientation (for DFS strategy) - initially facing EAST (right)
         self.orientation = self.EAST
         
@@ -68,11 +69,13 @@ class MazeAgent:
 
         # Load agent rules based on strategy
         agent_path = Path(__file__).parent.parent / "agent"
-        
+
         if self.strategy == "naive":
             rules_file = "maze-navigator-naive.soar"
         elif self.strategy == "dfs":
             rules_file = "maze-navigator-dfs.soar"
+        elif self.strategy == "wall-follow":
+            rules_file = "maze-navigator-wall-follow.soar"
         else:
             print(f"Unknown strategy: {self.strategy}")
             return False
@@ -117,8 +120,8 @@ class MazeAgent:
         self.wmes['target-x'] = self.input_link.CreateIntWME("target-x", target_x)
         self.wmes['target-y'] = self.input_link.CreateIntWME("target-y", target_y)
 
-        # Add sensors (relative to agent orientation for DFS)
-        if self.strategy == "dfs":
+        # Add sensors (relative to agent orientation for DFS and wall-follow)
+        if self.strategy in ["dfs", "wall-follow"]:
             sensors = self._get_oriented_sensors()
             sensor_id = self.input_link.CreateIdWME("sensors")
             self.wmes['sensors'] = sensor_id
@@ -188,7 +191,9 @@ class MazeAgent:
             if output_link is None:
                 return
 
-            # Get all command WMEs to remove after processing
+            # Collect turn and move commands separately
+            turn_commands = []
+            move_commands = []
             wmes_to_remove = []
 
             # Iterate through output-link children to find commands
@@ -196,23 +201,36 @@ class MazeAgent:
                 wme = output_link.GetChild(i)
                 attr = wme.GetAttribute()
 
-                # Process move and turn commands
-                if attr == "move" or attr == "turn":
+                # Collect move and turn commands
+                if attr == "turn":
                     command_id = wme.ConvertToIdentifier()
-
-                    # Get direction
                     direction_wme = command_id.FindByAttribute("direction", 0)
                     if direction_wme:
                         direction = direction_wme.GetValueAsString()
-
-                        # Execute command
-                        if attr == "move":
-                            self._execute_move(direction)
-                        elif attr == "turn":
-                            self._execute_turn(direction)
-
-                        # Mark for removal (remove the WME linking output-link to command)
+                        turn_commands.append(direction)
                         wmes_to_remove.append(wme)
+
+                elif attr == "move":
+                    command_id = wme.ConvertToIdentifier()
+                    direction_wme = command_id.FindByAttribute("direction", 0)
+                    if direction_wme:
+                        direction = direction_wme.GetValueAsString()
+                        move_commands.append(direction)
+                        wmes_to_remove.append(wme)
+
+            if self.debug:
+                if turn_commands or move_commands:
+                    print(f"  Commands: Turn={turn_commands}, Move={move_commands}")
+                else:
+                    print(f"  Commands: None")
+
+            # Process turn commands FIRST (in order)
+            for direction in turn_commands:
+                self._execute_turn(direction)
+
+            # Then process move commands
+            for direction in move_commands:
+                self._execute_move(direction)
 
             # Remove processed commands by removing the link from output-link
             for wme in wmes_to_remove:
@@ -233,8 +251,8 @@ class MazeAgent:
         Returns:
             True if move successful, False otherwise
         """
-        if self.strategy == "dfs":
-            # For DFS, interpret relative directions
+        if self.strategy in ["dfs", "wall-follow"]:
+            # For DFS and wall-follow, interpret relative directions
             if direction == "forward":
                 direction = self._get_absolute_direction(0)
             elif direction == "backward":
@@ -265,7 +283,8 @@ class MazeAgent:
         self.path.append((self.x, self.y))
         self.discovered.add((self.x, self.y))
 
-        print(f"Moved {direction} to ({self.x}, {self.y})")
+        if self.debug:
+            print(f"  Moved {direction} to ({self.x}, {self.y})")
 
         # Update input link with new state
         self._update_input_link()
@@ -275,7 +294,7 @@ class MazeAgent:
     def _execute_turn(self, direction: str):
         """
         Execute a turn command (for DFS strategy).
-        
+
         Args:
             direction: 'left' or 'right'
         """
@@ -283,9 +302,10 @@ class MazeAgent:
             self.orientation = (self.orientation - 1) % 4
         elif direction == "right":
             self.orientation = (self.orientation + 1) % 4
-        
-        print(f"Turned {direction}, now facing {self.ORIENTATION_NAMES[self.orientation]}")
-        
+
+        if self.debug:
+            print(f"  Turned {direction}, now facing {self.ORIENTATION_NAMES[self.orientation]}")
+
         # Update input link with new orientation
         self._update_input_link()
     
@@ -332,7 +352,7 @@ class MazeAgent:
             'steps': len(self.path) - 1,
             'discovered': len(self.discovered),
             'total_cells': self.maze.width * self.maze.height,
-            'orientation': self.ORIENTATION_NAMES[self.orientation] if self.strategy == "dfs" else None
+            'orientation': self.ORIENTATION_NAMES[self.orientation] if self.strategy in ["dfs", "wall-follow"] else None
         }
     
     def shutdown(self):

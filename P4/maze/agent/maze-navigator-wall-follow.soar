@@ -1,0 +1,142 @@
+##################################################
+# Maze Navigator - Wall Following Strategy
+#
+# Strategy: Left-wall following (doesn't rotate without moving)
+# Priority:
+# 1. Go STRAIGHT if front is clear AND left has wall
+# 2. Turn LEFT and move if left is clear
+# 3. Turn RIGHT and move if right is clear
+# 4. Turn BACK (180°) and move if all blocked
+##################################################
+
+# Propose operator to move-forward (straight)
+# Only when front is clear AND there's a wall on left
+sp {maze*propose*move-forward
+   (state <s> ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^front clear
+              ^left wall)
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name move-forward
+        ^direction forward)
+}
+
+# Propose operator to turn-left-and-move
+# When left is clear (higher priority than straight when no left wall)
+sp {maze*propose*turn-left-move
+   (state <s> ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^left clear)
+-->
+   (<s> ^operator <o> + >)
+   (<o> ^name turn-left-move
+        ^turn-direction left
+        ^move-direction forward)
+}
+
+# Propose operator to turn-right-and-move
+# When can't go straight or left, but right is clear
+sp {maze*propose*turn-right-move
+   (state <s> ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^front wall
+              ^left wall
+              ^right clear)
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name turn-right-move
+        ^turn-direction right
+        ^move-direction forward)
+}
+
+# Propose operator to turn-back-and-move (180 degrees)
+# When all directions blocked (dead end)
+sp {maze*propose*turn-back-move
+   (state <s> ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^front wall
+              ^left wall
+              ^right wall)
+-->
+   (<s> ^operator <o> + =)
+   (<o> ^name turn-back-move
+        ^turn-direction back
+        ^move-direction forward)
+}
+
+# Apply move-forward: just move forward
+sp {maze*apply*move-forward
+   (state <s> ^operator <o>
+              ^io.output-link <ol>)
+   (<o> ^name move-forward
+        ^direction <dir>)
+-->
+   (<ol> ^move <cmd>)
+   (<cmd> ^direction <dir>)
+}
+
+# Apply turn-left-move: first turn left, then move
+sp {maze*apply*turn-left-move
+   (state <s> ^operator <o>
+              ^io.output-link <ol>)
+   (<o> ^name turn-left-move
+        ^turn-direction <turn-dir>
+        ^move-direction <move-dir>)
+-->
+   (<ol> ^turn <turn-cmd>)
+   (<turn-cmd> ^direction <turn-dir>)
+   (<ol> ^move <move-cmd>)
+   (<move-cmd> ^direction <move-dir>)
+}
+
+# Apply turn-right-move: first turn right, then move
+sp {maze*apply*turn-right-move
+   (state <s> ^operator <o>
+              ^io.output-link <ol>)
+   (<o> ^name turn-right-move
+        ^turn-direction <turn-dir>
+        ^move-direction <move-dir>)
+-->
+   (<ol> ^turn <turn-cmd>)
+   (<turn-cmd> ^direction <turn-dir>)
+   (<ol> ^move <move-cmd>)
+   (<move-cmd> ^direction <move-dir>)
+}
+
+# Apply turn-back-move: turn 180 degrees (turn right twice), then move
+sp {maze*apply*turn-back-move
+   (state <s> ^operator <o>
+              ^io.output-link <ol>)
+   (<o> ^name turn-back-move
+        ^turn-direction back
+        ^move-direction <move-dir>)
+-->
+   # Turn right twice to turn 180 degrees
+   (<ol> ^turn <turn-cmd1>)
+   (<turn-cmd1> ^direction right)
+   (<ol> ^turn <turn-cmd2>)
+   (<turn-cmd2> ^direction right)
+   (<ol> ^move <move-cmd>)
+   (<move-cmd> ^direction <move-dir>)
+}
+
+# Success: reached target
+sp {maze*propose*success
+   (state <s> ^io.input-link.at-target yes)
+-->
+   (<s> ^operator <o> + >)
+   (<o> ^name success)
+}
+
+sp {maze*apply*success
+   (state <s> ^operator <o>)
+   (<o> ^name success)
+-->
+   (write |Target reached!|)
+   (halt)
+}
