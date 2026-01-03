@@ -3,8 +3,15 @@ from pathlib import Path
 from typing import Set, Tuple
 
 # Add Soar to Python path (adjust based on your Soar installation)
-sys.path.append(str(Path(__file__).parent.parent.parent / "SoarSuite_9.6.2-Multiplatform" / "bin"))
+from pathlib import Path
+import sys
+
+sys.path.append(
+    str(Path(r"C:\Users\marce\Desktop\euu\cuarto\robotica\SoarSuite_9.6.4-Multiplatform\bin"))
+)
+
 import Python_sml_ClientInterface as sml
+
 
 from .maze import Maze
 
