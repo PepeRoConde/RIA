@@ -1,0 +1,6 @@
+ - oscar 
+    - https://github.com/efallash/oscar?tab=readme-ov-file
+    - https://docs.pillar-robots.eu/projects/emdb_experiments_gii/en/latest/experiments/oscar_experiment.html
+ - thor oscar https://github.com/efallash/thor_simulator
+ - thor https://github.com/AngelLM/Thor?tab=readme-ov-file
+ - ros mac https://docs.ros.org/en/humble/Installation/Alternatives/macOS-Development-Setup.html

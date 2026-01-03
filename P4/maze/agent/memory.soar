@@ -1,0 +1,143 @@
+##################################################
+# MEMORY MANAGEMENT RULES
+# 
+# Rules for remembering explored locations and
+# making better navigation decisions based on history
+##################################################
+
+##################################################
+# TRACK VISITED LOCATIONS
+##################################################
+
+sp {maze-navigator*elaborate*visited-location
+   "Remember current location as visited"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^pos-x <x>
+         ^pos-y <y>)
+-->
+   (<s> ^visited-location <loc>)
+   (<loc> ^x <x>
+          ^y <y>)}
+
+##################################################
+# EXPLORATION PREFERENCES
+# Prefer exploring new areas
+##################################################
+
+# Mark moves to visited locations (UP direction)
+sp {maze-navigator*elaborate*visited*up
+   "Mark move up as leading to visited location"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o> +
+              ^visited-location <vloc>)
+   (<il> ^pos-x <curr-x>
+         ^pos-y <curr-y>)
+   (<o> ^name move
+        ^direction up)
+   (<vloc> ^x <curr-x>
+           ^y <vy>)
+   (<vy> = <curr-y> - 1)
+-->
+   (<o> ^leads-to-visited yes)}
+
+# Mark moves to visited locations (DOWN direction)
+sp {maze-navigator*elaborate*visited*down
+   "Mark move down as leading to visited location"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o> +
+              ^visited-location <vloc>)
+   (<il> ^pos-x <curr-x>
+         ^pos-y <curr-y>)
+   (<o> ^name move
+        ^direction down)
+   (<vloc> ^x <curr-x>
+           ^y <vy>)
+   (<vy> = <curr-y> + 1)
+-->
+   (<o> ^leads-to-visited yes)}
+
+# Mark moves to visited locations (LEFT direction)
+sp {maze-navigator*elaborate*visited*left
+   "Mark move left as leading to visited location"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o> +
+              ^visited-location <vloc>)
+   (<il> ^pos-x <curr-x>
+         ^pos-y <curr-y>)
+   (<o> ^name move
+        ^direction left)
+   (<vloc> ^x <vx>
+           ^y <curr-y>)
+   (<vx> = <curr-x> - 1)
+-->
+   (<o> ^leads-to-visited yes)}
+
+# Mark moves to visited locations (RIGHT direction)
+sp {maze-navigator*elaborate*visited*right
+   "Mark move right as leading to visited location"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o> +
+              ^visited-location <vloc>)
+   (<il> ^pos-x <curr-x>
+         ^pos-y <curr-y>)
+   (<o> ^name move
+        ^direction right)
+   (<vloc> ^x <vx>
+           ^y <curr-y>)
+   (<vx> = <curr-x> + 1)
+-->
+   (<o> ^leads-to-visited yes)}
+
+# Reject moves to visited locations when unvisited options exist
+sp {maze-navigator*reject*visited-location
+   "Prefer unvisited locations over visited ones"
+   (state <s> ^name maze-navigator
+              ^operator <o1> +
+              ^operator <o2> +)
+   (<o1> ^name move
+         ^leads-to-visited yes)
+   (<o2> ^name move
+        -^leads-to-visited yes)
+-->
+   (<s> ^operator <o1> < <o2>)}
+
+##################################################
+# PROGRESS MONITORING
+##################################################
+
+sp {maze-navigator*monitor*progress
+   "Print progress information"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^pos-x <x>
+         ^pos-y <y>
+         ^manhattan-distance <dist>
+         ^discovered-count <count>)
+-->
+   (write (crlf) |Position: (| <x> |,| <y> |) | 
+          |Distance to target: | <dist> 
+          | Explored cells: | <count>)}
+
+##################################################
+# DEADLOCK DETECTION
+# Detect when agent might be stuck
+##################################################
+
+sp {maze-navigator*detect*no-moves
+   "Detect when no moves are available"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^up wall
+              ^down wall
+              ^left wall
+              ^right wall)
+-->
+   (write (crlf) |WARNING: Agent is stuck - no valid moves available!| (crlf))
+   (halt)}

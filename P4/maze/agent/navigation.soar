@@ -1,0 +1,158 @@
+##################################################
+# NAVIGATION RULES
+# 
+# Rules that determine how the agent moves through the maze
+##################################################
+
+##################################################
+# OPERATOR: move
+# Proposes moving in a direction
+##################################################
+
+# Propose moving up
+sp {maze-navigator*propose*move*up
+   "Propose moving up if not blocked"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^up clear)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name move
+        ^direction up)}
+
+# Propose moving down
+sp {maze-navigator*propose*move*down
+   "Propose moving down if not blocked"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^down clear)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name move
+        ^direction down)}
+
+# Propose moving left
+sp {maze-navigator*propose*move*left
+   "Propose moving left if not blocked"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^left clear)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name move
+        ^direction left)}
+
+# Propose moving right
+sp {maze-navigator*propose*move*right
+   "Propose moving right if not blocked"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^right clear)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name move
+        ^direction right)}
+
+##################################################
+# MOVEMENT PREFERENCES
+# Prefer directions that move toward target
+##################################################
+
+# Prefer moving right if target is to the right
+sp {maze-navigator*prefer*move*right*toward-target
+   "Prefer moving right when target is to the right"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o1> +
+              ^operator <o2> +)
+   (<il> ^pos-x <x>
+         ^target-x > <x>)
+   (<o1> ^name move
+         ^direction right)
+   (<o2> ^name move
+         ^direction << left up down >>)
+-->
+   (<s> ^operator <o1> > <o2>)}
+
+# Prefer moving left if target is to the left
+sp {maze-navigator*prefer*move*left*toward-target
+   "Prefer moving left when target is to the left"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o1> +
+              ^operator <o2> +)
+   (<il> ^pos-x <x>
+         ^target-x < <x>)
+   (<o1> ^name move
+         ^direction left)
+   (<o2> ^name move
+         ^direction << right up down >>)
+-->
+   (<s> ^operator <o1> > <o2>)}
+
+# Prefer moving down if target is below
+sp {maze-navigator*prefer*move*down*toward-target
+   "Prefer moving down when target is below"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o1> +
+              ^operator <o2> +)
+   (<il> ^pos-y <y>
+         ^target-y > <y>)
+   (<o1> ^name move
+         ^direction down)
+   (<o2> ^name move
+         ^direction << up left right >>)
+-->
+   (<s> ^operator <o1> > <o2>)}
+
+# Prefer moving up if target is above
+sp {maze-navigator*prefer*move*up*toward-target
+   "Prefer moving up when target is above"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o1> +
+              ^operator <o2> +)
+   (<il> ^pos-y <y>
+         ^target-y < <y>)
+   (<o1> ^name move
+         ^direction up)
+   (<o2> ^name move
+         ^direction << down left right >>)
+-->
+   (<s> ^operator <o1> > <o2>)}
+
+##################################################
+# APPLY MOVEMENT
+# Execute the movement command
+##################################################
+
+sp {maze-navigator*apply*move
+   "Execute a move command on the output-link"
+   (state <s> ^name maze-navigator
+              ^operator <o>
+              ^io.output-link <ol>)
+   (<o> ^name move
+        ^direction <dir>)
+-->
+   (<ol> ^move <cmd>)
+   (<cmd> ^direction <dir>)
+   (write (crlf) |Attempting to move: | <dir>)}
+
+# Remove completed commands
+sp {maze-navigator*apply*move*remove-command
+   "Remove completed move commands from output-link"
+   (state <s> ^name maze-navigator
+              ^io.output-link <ol>)
+   (<ol> ^move <cmd>)
+   (<cmd> ^status << complete error >>)
+-->
+   (<ol> ^move <cmd> -)}

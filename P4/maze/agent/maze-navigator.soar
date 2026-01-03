@@ -1,0 +1,45 @@
+##################################################
+# Maze Navigator Agent
+# 
+# A Soar agent that navigates through a maze to reach a target
+# using sensory information and memory of explored paths.
+##################################################
+
+# Load the navigation rules
+source navigation.soar
+
+# Load the memory management rules  
+source memory.soar
+
+##################################################
+# INITIALIZATION
+##################################################
+
+sp {maze-navigator*propose*initialize
+   "Propose initialization of the agent state"
+   (state <s> ^superstate nil
+             -^name)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name initialize-maze-navigator)}
+
+sp {maze-navigator*apply*initialize
+   "Initialize agent state and structures"
+   (state <s> ^operator <o>)
+   (<o> ^name initialize-maze-navigator)
+-->
+   (<s> ^name maze-navigator)
+   (write (crlf) |Maze Navigator initialized| (crlf))}
+
+##################################################
+# SUCCESS DETECTION
+##################################################
+
+sp {maze-navigator*detect*success
+   "Detect when agent has reached the target"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^at-target yes)
+-->
+   (write (crlf) |SUCCESS! Target reached!| (crlf))
+   (halt)}
