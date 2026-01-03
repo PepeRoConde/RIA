@@ -33,19 +33,25 @@ class Maze:
         self._ensure_path()
     
     def _ensure_path(self):
-        """Ensure at least one path exists from start to target."""
+        """Ensure at least one path exists from start to target using a diagonal staircase pattern."""
         x, y = self.start_pos
         target_x, target_y = self.target_pos
-        
-        # Clear horizontal path
-        while x < target_x:
+
+        # Create a diagonal staircase path to avoid clearing entire edges
+        # This alternates between moving right and down
+        while x < target_x or y < target_y:
+            # Clear current position
             self.grid[y][x] = False
-            x += 1
-        
-        # Clear vertical path
-        while y < target_y:
-            self.grid[y][x] = False
-            y += 1
+
+            # Move right if we haven't reached target x
+            if x < target_x:
+                x += 1
+                self.grid[y][x] = False
+
+            # Move down if we haven't reached target y
+            if y < target_y:
+                y += 1
+                self.grid[y][x] = False
     
     def is_wall(self, x: int, y: int) -> bool:
         """Check if position contains a wall."""
