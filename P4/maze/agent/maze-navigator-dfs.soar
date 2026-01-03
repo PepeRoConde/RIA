@@ -1,0 +1,42 @@
+##################################################
+# Maze Navigator Agent - DFS STRATEGY
+# 
+# A Soar agent that navigates using left-hand wall following
+# (depth-first search strategy)
+##################################################
+
+# Load the navigation rules for DFS strategy
+source navigation-dfs.soar
+
+##################################################
+# INITIALIZATION
+##################################################
+
+sp {maze-navigator*propose*initialize
+   "Propose initialization of the agent state"
+   (state <s> ^superstate nil
+             -^name)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name initialize-maze-navigator)}
+
+sp {maze-navigator*apply*initialize
+   "Initialize agent state and structures"
+   (state <s> ^operator <o>)
+   (<o> ^name initialize-maze-navigator)
+-->
+   (<s> ^name maze-navigator)
+   (write (crlf) |Maze Navigator initialized (DFS LEFT-HAND strategy)| (crlf))}
+
+##################################################
+# SUCCESS DETECTION
+##################################################
+
+sp {maze-navigator*detect*success
+   "Detect when agent has reached the target"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^at-target yes)
+-->
+   (write (crlf) |SUCCESS! Target reached!| (crlf))
+   (halt)}

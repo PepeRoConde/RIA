@@ -1,5 +1,5 @@
 import random
-from typing import Tuple, List
+from typing import Tuple, List, Optional
 
 class Maze:
     """Generates and manages a random maze environment."""
@@ -60,10 +60,11 @@ class Maze:
     def get_sensors(self, x: int, y: int) -> dict:
         """
         Get sensor readings for all four directions.
+        Grid boundaries are treated as walls.
         
         Returns:
             Dictionary with keys: 'up', 'down', 'left', 'right'
-            Values are True if wall detected, False if clear
+            Values are True if wall/boundary detected, False if clear
         """
         return {
             'up': self.is_wall(x, y - 1),
@@ -72,14 +73,31 @@ class Maze:
             'right': self.is_wall(x + 1, y)
         }
     
-    def display(self, agent_pos: Tuple[int, int] = None):
-        """Display the maze in console."""
+    def display(self, agent_pos: Tuple[int, int] = None, orientation: Optional[str] = None):
+        """
+        Display the maze in console.
+        
+        Args:
+            agent_pos: Current position of the agent (x, y)
+            orientation: Agent's facing direction ('north', 'east', 'south', 'west')
+        """
+        # Orientation symbols
+        orientation_symbols = {
+            'north': '⏶',  # pointing up
+            'east': '⏵',   # pointing right
+            'south': '⏷',  # pointing down
+            'west': '⏴'    # pointing left
+        }
+        
         print("\n" + "=" * (self.width * 2 + 1))
         for y in range(self.height):
             row = "|"
             for x in range(self.width):
                 if agent_pos and (x, y) == agent_pos:
-                    row += "A "  # Agent
+                    if orientation and orientation in orientation_symbols:
+                        row += orientation_symbols[orientation] + " "
+                    else:
+                        row += "A "  # Agent without orientation
                 elif (x, y) == self.target_pos:
                     row += "T "  # Target
                 elif self.grid[y][x]:
@@ -89,4 +107,9 @@ class Maze:
             row += "|"
             print(row)
         print("=" * (self.width * 2 + 1))
-        print(f"Agent: {agent_pos}, Target: {self.target_pos}\n")
+        
+        # Display agent position and orientation
+        if orientation:
+            print(f"Agent: {agent_pos} (facing {orientation}), Target: {self.target_pos}\n")
+        else:
+            print(f"Agent: {agent_pos}, Target: {self.target_pos}\n")

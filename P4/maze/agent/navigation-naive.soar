@@ -1,7 +1,7 @@
 ##################################################
-# NAVIGATION RULES
+# NAVIGATION RULES - NAIVE STRATEGY
 # 
-# Rules that determine how the agent moves through the maze
+# Target-seeking navigation with memory of visited cells
 ##################################################
 
 ##################################################

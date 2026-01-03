@@ -1,0 +1,184 @@
+##################################################
+# NAVIGATION RULES - DFS STRATEGY
+# 
+# Left-hand wall following (depth-first search)
+# Priority: left > forward > right > turn around
+##################################################
+
+##################################################
+# MOVEMENT OPERATORS
+##################################################
+
+# Propose moving forward
+sp {maze-navigator*propose*move*forward
+   "Propose moving forward if not blocked"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^sensors <sensors>
+         ^at-target no)
+   (<sensors> ^front clear)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name move
+        ^direction forward)}
+
+##################################################
+# TURNING OPERATORS
+##################################################
+
+# Propose turning left
+sp {maze-navigator*propose*turn*left
+   "Propose turning left"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^at-target no)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name turn
+        ^direction left)}
+
+# Propose turning right
+sp {maze-navigator*propose*turn*right
+   "Propose turning right"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>)
+   (<il> ^at-target no)
+-->
+   (<s> ^operator <o> +)
+   (<o> ^name turn
+        ^direction right)}
+
+##################################################
+# DFS LEFT-HAND WALL FOLLOWING PREFERENCES
+# Priority: Try left first, then forward, then right, then back
+##################################################
+
+# HIGHEST PRIORITY: Turn left and move if left is clear
+sp {maze-navigator*prefer*turn-left*when-left-clear
+   "Prefer turning left when left side is clear"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o1> +
+              ^operator <o2> +)
+   (<il> ^sensors.left clear)
+   (<o1> ^name turn
+         ^direction left)
+   (<o2> ^name << move turn >>
+         ^direction <> left)
+-->
+   (<s> ^operator <o1> > <o2>)}
+
+# SECOND PRIORITY: Move forward when left is blocked
+sp {maze-navigator*prefer*forward*when-left-blocked
+   "Prefer moving forward when left is blocked"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o1> +
+              ^operator <o2> +)
+   (<il> ^sensors <sensors>)
+   (<sensors> ^left wall
+              ^front clear)
+   (<o1> ^name move
+         ^direction forward)
+   (<o2> ^name turn)
+-->
+   (<s> ^operator <o1> > <o2>)}
+
+# THIRD PRIORITY: Turn right when left and forward blocked
+sp {maze-navigator*prefer*turn-right*when-left-forward-blocked
+   "Prefer turning right when left and forward are blocked"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o1> +
+              ^operator <o2> +)
+   (<il> ^sensors <sensors>)
+   (<sensors> ^left wall
+              ^front wall
+              ^right clear)
+   (<o1> ^name turn
+         ^direction right)
+   (<o2> ^name turn
+         ^direction left)
+-->
+   (<s> ^operator <o1> > <o2>)}
+
+# LAST RESORT: Turn around (turn right twice) when surrounded
+sp {maze-navigator*prefer*turn-right*when-surrounded
+   "Turn right when all other directions blocked (will turn twice)"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o1> +)
+   (<il> ^sensors <sensors>)
+   (<sensors> ^left wall
+              ^front wall
+              ^right wall)
+   (<o1> ^name turn
+         ^direction right)
+-->
+   (<s> ^operator <o1> >)}
+
+##################################################
+# APPLY MOVEMENT
+##################################################
+
+sp {maze-navigator*apply*move
+   "Execute a move command on the output-link"
+   (state <s> ^name maze-navigator
+              ^operator <o>
+              ^io.output-link <ol>)
+   (<o> ^name move
+        ^direction <dir>)
+-->
+   (<ol> ^move <cmd>)
+   (<cmd> ^direction <dir>)
+   (write (crlf) |Moving: | <dir>)}
+
+sp {maze-navigator*apply*move*remove-command
+   "Remove completed move commands from output-link"
+   (state <s> ^name maze-navigator
+              ^io.output-link <ol>)
+   (<ol> ^move <cmd>)
+   (<cmd> ^status << complete error >>)
+-->
+   (<ol> ^move <cmd> -)}
+
+##################################################
+# APPLY TURNING
+##################################################
+
+sp {maze-navigator*apply*turn
+   "Execute a turn command on the output-link"
+   (state <s> ^name maze-navigator
+              ^operator <o>
+              ^io.output-link <ol>)
+   (<o> ^name turn
+        ^direction <dir>)
+-->
+   (<ol> ^turn <cmd>)
+   (<cmd> ^direction <dir>)
+   (write (crlf) |Turning: | <dir>)}
+
+sp {maze-navigator*apply*turn*remove-command
+   "Remove completed turn commands from output-link"
+   (state <s> ^name maze-navigator
+              ^io.output-link <ol>)
+   (<ol> ^turn <cmd>)
+   (<cmd> ^status complete)
+-->
+   (<ol> ^turn <cmd> -)}
+
+##################################################
+# MONITORING
+##################################################
+
+sp {maze-navigator*monitor*state
+   "Monitor agent state and orientation"
+   (state <s> ^name maze-navigator
+              ^io.input-link <il>
+              ^operator <o>)
+   (<o> ^name << move turn >>)
+   (<il> ^pos-x <x>
+         ^pos-y <y>
+         ^orientation <orient>)
+-->
+   (write (crlf) |Position: (| <x> |,| <y> |) Facing: | <orient>)}

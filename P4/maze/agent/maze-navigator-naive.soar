@@ -1,12 +1,12 @@
 ##################################################
-# Maze Navigator Agent
+# Maze Navigator Agent - NAIVE STRATEGY
 # 
-# A Soar agent that navigates through a maze to reach a target
-# using sensory information and memory of explored paths.
+# A Soar agent that navigates toward the target using
+# target-seeking heuristics with memory of visited cells.
 ##################################################
 
-# Load the navigation rules
-source navigation.soar
+# Load the navigation rules for naive strategy
+source navigation-naive.soar
 
 # Load the memory management rules  
 source memory.soar
@@ -29,7 +29,7 @@ sp {maze-navigator*apply*initialize
    (<o> ^name initialize-maze-navigator)
 -->
    (<s> ^name maze-navigator)
-   (write (crlf) |Maze Navigator initialized| (crlf))}
+   (write (crlf) |Maze Navigator initialized (NAIVE strategy)| (crlf))}
 
 ##################################################
 # TIE BREAKING - CLOCKWISE PREFERENCE
