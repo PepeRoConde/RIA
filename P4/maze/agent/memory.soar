@@ -21,111 +21,91 @@ sp {maze-navigator*elaborate*visited-location
           ^y <y>)}
 
 ##################################################
-# EXPLORATION PREFERENCES
-# Prefer exploring new areas
+# COMPUTE NEIGHBOR POSITIONS
 ##################################################
 
-# Mark moves to visited locations (UP direction)
-sp {maze-navigator*elaborate*visited*up
-   "Mark move up as leading to visited location"
+sp {maze-navigator*elaborate*neighbor-positions
+   "Compute the positions of neighboring cells"
    (state <s> ^name maze-navigator
-              ^io.input-link <il>
+              ^io.input-link <il>)
+   (<il> ^pos-x <x>
+         ^pos-y <y>)
+-->
+   (<s> ^neighbor-pos <up>
+        ^neighbor-pos <down>
+        ^neighbor-pos <left>
+        ^neighbor-pos <right>)
+   (<up> ^direction up
+         ^x <x>
+         ^y (- <y> 1))
+   (<down> ^direction down
+           ^x <x>
+           ^y (+ <y> 1))
+   (<left> ^direction left
+           ^x (- <x> 1)
+           ^y <y>)
+   (<right> ^direction right
+            ^x (+ <x> 1)
+            ^y <y>)}
+
+##################################################
+# MARK MOVES TO VISITED LOCATIONS
+##################################################
+
+sp {maze-navigator*elaborate*move-to-visited
+   "Mark moves that lead to visited locations"
+   (state <s> ^name maze-navigator
               ^operator <o> +
+              ^neighbor-pos <neighbor>
               ^visited-location <vloc>)
-   (<il> ^pos-x <curr-x>
-         ^pos-y <curr-y>)
    (<o> ^name move
-        ^direction up)
-   (<vloc> ^x <curr-x>
-           ^y <vy>)
-   (<vy> = <curr-y> - 1)
+        ^direction <dir>)
+   (<neighbor> ^direction <dir>
+               ^x <nx>
+               ^y <ny>)
+   (<vloc> ^x <nx>
+           ^y <ny>)
 -->
    (<o> ^leads-to-visited yes)}
 
-# Mark moves to visited locations (DOWN direction)
-sp {maze-navigator*elaborate*visited*down
-   "Mark move down as leading to visited location"
-   (state <s> ^name maze-navigator
-              ^io.input-link <il>
-              ^operator <o> +
-              ^visited-location <vloc>)
-   (<il> ^pos-x <curr-x>
-         ^pos-y <curr-y>)
-   (<o> ^name move
-        ^direction down)
-   (<vloc> ^x <curr-x>
-           ^y <vy>)
-   (<vy> = <curr-y> + 1)
--->
-   (<o> ^leads-to-visited yes)}
+##################################################
+# EXPLORATION PREFERENCES (WEAKER)
+# Only prefer unvisited when no other factors apply
+##################################################
 
-# Mark moves to visited locations (LEFT direction)
-sp {maze-navigator*elaborate*visited*left
-   "Mark move left as leading to visited location"
-   (state <s> ^name maze-navigator
-              ^io.input-link <il>
-              ^operator <o> +
-              ^visited-location <vloc>)
-   (<il> ^pos-x <curr-x>
-         ^pos-y <curr-y>)
-   (<o> ^name move
-        ^direction left)
-   (<vloc> ^x <vx>
-           ^y <curr-y>)
-   (<vx> = <curr-x> - 1)
--->
-   (<o> ^leads-to-visited yes)}
-
-# Mark moves to visited locations (RIGHT direction)
-sp {maze-navigator*elaborate*visited*right
-   "Mark move right as leading to visited location"
-   (state <s> ^name maze-navigator
-              ^io.input-link <il>
-              ^operator <o> +
-              ^visited-location <vloc>)
-   (<il> ^pos-x <curr-x>
-         ^pos-y <curr-y>)
-   (<o> ^name move
-        ^direction right)
-   (<vloc> ^x <vx>
-           ^y <curr-y>)
-   (<vx> = <curr-x> + 1)
--->
-   (<o> ^leads-to-visited yes)}
-
-# Reject moves to visited locations when unvisited options exist
-sp {maze-navigator*reject*visited-location
-   "Prefer unvisited locations over visited ones"
+sp {maze-navigator*prefer*unvisited-weakly
+   "Weakly prefer unvisited locations (can be overridden)"
    (state <s> ^name maze-navigator
               ^operator <o1> +
               ^operator <o2> +)
    (<o1> ^name move
-         ^leads-to-visited yes)
-   (<o2> ^name move
         -^leads-to-visited yes)
+   (<o2> ^name move
+         ^leads-to-visited yes)
 -->
-   (<s> ^operator <o1> < <o2>)}
+   (<s> ^operator <o1> > <o2>)}
 
 ##################################################
 # PROGRESS MONITORING
 ##################################################
 
 sp {maze-navigator*monitor*progress
-   "Print progress information"
+   "Print progress information every step"
    (state <s> ^name maze-navigator
-              ^io.input-link <il>)
+              ^io.input-link <il>
+              ^operator <o>)
+   (<o> ^name move
+        ^direction <dir>)
    (<il> ^pos-x <x>
          ^pos-y <y>
          ^manhattan-distance <dist>
          ^discovered-count <count>)
 -->
-   (write (crlf) |Position: (| <x> |,| <y> |) | 
-          |Distance to target: | <dist> 
-          | Explored cells: | <count>)}
+   (write (crlf) |Step: Moving | <dir> | from (| <x> |,| <y> |) | 
+          |Distance: | <dist> | Explored: | <count> (crlf))}
 
 ##################################################
 # DEADLOCK DETECTION
-# Detect when agent might be stuck
 ##################################################
 
 sp {maze-navigator*detect*no-moves
