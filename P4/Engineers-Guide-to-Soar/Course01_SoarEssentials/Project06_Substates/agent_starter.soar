@@ -1,0 +1,79 @@
+# This is the same as the solution to Project 05 
+#  EXCEPT that it does not include the (init) operator
+#  AND it does not include the (select-supplier) preference rule.
+load file "existing_code_05.soar"
+
+cd ".."
+load file "fake_agent_input.soar"
+
+
+####### PROBLEM SPACE: suppliersort-main #######
+
+##############################
+##  OPERATOR: init
+# Initialize the state with main structures we'll use during later processing
+##############################
+
+sp {propose*suppliersort-main*init
+    "Propose to init the state structures"
+    # FIXME: Replace the test for "^type state" with a test for "^superstate nil". This will guarantee that this rule only matches on the topstate.
+    (state <s> ^type state
+              -^supplier-list )
+    -->
+    # Propose the init operator with the "required" preference
+    (<s> ^operator <o> + !)
+    (<o> ^name init)}
+
+## Name the topstate 'suppliersort-main' during the (init) operator
+sp {apply*suppliersort-main*init
+    (state <s> ^operator.name init)
+    -->
+    # Use the init operator to create main structures we'll need later
+    # FIXME: Add code that sets the state name to "suppliersort-main".
+	(<s> ^supplier-list <cr-new>)       # The empty list that we'll output
+    (<cr-new> ^count 0)}                # Initialize the list size to 0
+
+
+
+
+####### PROBLEM SPACE: suppliersort-tie #######
+
+# sp {elaborate*suppliersort-tie*name
+#     # FIXME: Replace the underscores with code that tests that the superstate's name is "suppliersort-main"
+#     #   and that this substate is from a tie impasse.
+#     (state <s> ____
+#               _____)
+#     -->
+# 	(write |** (Figuring out how to sort the suppliers...)| (crlf))
+#     (<s> ^name suppliersort-tie)}
+
+
+##############################
+##  OPERATOR: break-attr-tie
+# Create preferences among the tied superstate operators to break the tie.
+##############################
+
+# FIXME: Write a proposal rule called "propose*suppliersort-tie*break-attr-tie"
+#   On its LHS it should test that the state name is suppliersort-tie.
+#   On its RHS it should create an operator named "break-attr-tie".
+
+
+# Apply the break-attr-tie operator
+# sp {apply*suppliersort-tie*break-attr-tie*prefer-total-score
+#     "Prefer by total-score"
+#     (state <s> ^operator.name break-attr-tie
+#             # FIXME: Replace the underscores with code that references the superstate. Use <ss> for the superstate variable name.
+#             _____
+#             # FIXME: Replace the underscores with code that references two tied items that led to this state's impasse. Reference them as <o1> and <o2>.
+#             ____
+#             ____)
+#     (<o1> ^supplier <sup1>)
+#     (<o2> ^supplier <sup2>)
+#     (<sup1> ^name <sup1-name>
+#             ^total-score <val1>)
+#     (<sup2> ^name <sup2-name>
+#             ^total-score < <val1>)
+#     -->
+#     (write |Total-score: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+#     # FIXME: Replace the underscores with code that creates the preference on the superstate (not the current state!)
+#     _____}

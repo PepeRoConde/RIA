@@ -1,0 +1,73 @@
+# This is the same as the solution to Project 05 
+#  EXCEPT that it does not include the (init) operator
+#  AND it does not include the (select-supplier) preference rule.
+load file "existing_code_05.soar"
+
+cd ".."
+load file "fake_agent_input.soar"
+
+
+####### PROBLEM SPACE: suppliersort-main #######
+
+##############################
+##  OPERATOR: init
+# Initialize the state with main structures we'll use during later processing
+##############################
+
+sp {propose*suppliersort-main*init
+    "Propose to init the state structures"
+    (state <s> ^superstate nil
+              -^supplier-list )
+    -->
+    # Propose the init operator with the "required" preference
+    (<s> ^operator <o> + !)
+    (<o> ^name init)}
+
+## Name the topstate 'suppliersort-main' during the (init) operator
+sp {apply*suppliersort-main*init
+    (state <s> ^operator.name init)
+    -->
+    # Use the init operator to create main structures we'll need later
+	(<s> ^name suppliersort-main        # The state name
+        ^supplier-list <cr-new>)        # The empty list that we'll output
+    (<cr-new> ^count 0)}                # Initialize the list size to 0
+
+
+
+
+####### PROBLEM SPACE: suppliersort-tie #######
+
+sp {elaborate*suppliersort-tie*name
+    (state <s> ^superstate.name suppliersort-main
+            ^impasse tie)
+    -->
+	(write |** (Figuring out how to sort the suppliers...)| (crlf))
+    (<s> ^name suppliersort-tie)}
+
+
+##############################
+##  OPERATOR: break-attr-tie
+# Create preferences among the tied superstate operators to break the tie.
+##############################
+
+sp {propose*suppliersort-tie*break-attr-tie
+    (state <s> ^name suppliersort-tie)
+    -->
+    (<s> ^operator <o> +)
+    (<o> ^name break-attr-tie)}
+
+sp {apply*suppliersort-tie*break-attr-tie*prefer-total-score
+    "Prefer by total-score"
+    (state <s> ^operator.name break-attr-tie
+            ^superstate <ss>
+            ^item <o1>
+            ^item <o2>)
+    (<o1> ^supplier <sup1>)
+    (<o2> ^supplier <sup2>)
+    (<sup1> ^name <sup1-name>
+            ^total-score <val1>)
+    (<sup2> ^name <sup2-name>
+            ^total-score < <val1>)
+    -->
+    (write |Total-score: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+    (<ss> ^operator <o1> > <o2>)}

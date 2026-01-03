@@ -1,0 +1,137 @@
+### suppliersort-find-subtotal STATE README #########################################
+# AUTHOR: Bryan Stearns, <YOUR NAME HERE>
+# DATE: <DATE HERE>
+# SUBSTATE DEPTH: 3
+# DESCRIPTION: Rules that respond to an ONC impasse under (evaluate-weight) by summing attribute scores of the operator's weight
+#
+##  OPERATORS
+# (add-attribute) + =                       |  Adds the parent operator weight's attribute scores together into a single subtotal for each supplier (repeat operator for each attribute)
+#
+##  WORKING MEMORY
+# S3  ^name |suppliersort-find-subtotal|    | 1  |  The name of this substate
+#     ^weight INT/FLOAT                     | 1  |  The weight for which the superstate suppliers need attribute subtotals
+#     ^priorities ID                        | 1  |  (ss) A pointer to the input-link object of the same name
+#     ^supplier ID                          | 2+ |  (ss) A pointer to a supplier being evaluated in the superstate (also from the input-link)
+#     ^addends-summed STRING                | 0+ |  An attribute name. Indicates that this attribute's scores have been summed.
+#     ^subtotal ID                          | 0+ |  A running subtotal for a supplier. This object will be returned to the superstate once compiled.
+#         ^supplier ID                      | 1  |  (ss) A pointer to the supplier that this subtotal is for
+#         ^weight INT/FLOAT                 | 1  |  Same value as the state augmentation with the same name, here so that the parent state has a record after this is returned
+#         ^value INT/FLOAT                  | 1  |  The subtotal sum
+#####################################################################################
+
+
+sp {elaborate*suppliersort-find-subtotal*name
+    "Name the state and copy useful structures down"
+    (state <s> ^superstate <ss>
+            ^impasse no-change)
+    (<ss> ^name suppliersort-tie
+        ^operator <o>
+        ^priorities <p>)
+    (<o> ^name evaluate-weight
+        ^weight <weight>)
+    -->
+    (<s> ^name suppliersort-find-subtotal
+        ^weight <weight>
+        ^priorities <p>)}
+
+sp {elaborate*suppliersort-find-subtotal*item-supplier*copy
+    "Collect supplier pointers for easy access"
+    (state <s> ^name suppliersort-find-subtotal
+                ^superstate.item.supplier <sup>)
+    -->
+    (<s> ^supplier <sup>)}
+
+# STEP 7: Return the subtotal object for each supplier once it has no more addends to add
+# sp {elaborate*suppliersort-find-subtotal*return*subtotal
+#     "Return the subtotal results"
+#     (state <s> ^name suppliersort-find-subtotal
+#                 ^weight <weight>
+#                 ^subtotal <t>
+#                 ^superstate <ss>)
+#     (<t> ^supplier <sup>)
+#     # FIXME: Replace the underscores with a negated conjunction test that there are no more unprocessed attributes for this supplier and weight.
+#     _____
+#     -->
+#     # FIXME: Replace the underscores with code that returns the subtotal object to the superstate.
+#     _____}
+
+
+##############################
+##  OPERATOR: add-attribute
+# Add a particular attribute score to each supplier's subtotal.
+# Propose for each attribute and iteratively select until there are no more to add.
+##  WORKING MEMORY
+# <o> ^name add-attribute           | 1  |  The name of this operator
+#     ^attr STRING                  | 1  |  The name of the attribute to be summed
+##############################
+
+# STEP 4: Propose to add the score for each attribute
+# FIXME: Replace the underscores with code that proposes an (add-attribute) operator for each attribute that needs to be summed.
+#        Propose for each attribute attached to the superstate's (evaluate-weight) operator.
+#        Be sure to test that the attribute has not yet been summed! (Test the lack of the ^addends-summed WME described in the WORKING MEMORY schema above.)
+#        Give the operator indifferent (=) preference in addition to the base acceptable (+) preference.
+#        You should copy the attribute name onto the operator under an "^attr" WME, as per the README WM schema above.
+#        Don't forget to fill in the rule documentation string with an appropriate description!
+# sp {propose*suppliersort-find-subtotal*add-attribute
+#     ""
+#     (state <s> ^name suppliersort-find-subtotal
+#                 _____)
+#     -->
+#     _____}
+
+sp {apply*suppliersort-find-subtotal*add-attribute*debug*write-attribute
+    "For debug printing: Show which attribute is being added."
+    (state <s> ^operator <o>)
+    (<o> ^name add-attribute
+        ^attr <attr>)
+    -->
+    (write |** Summing attribute: | <attr> (crlf))}
+
+# STEP 5: Initialize the subtotal to 0 if it has not yet been initialized.
+# sp {apply*suppliersort-find-subtotal*add-attribute*create-total
+#     "If no total has been created yet for this supplier, initialize it now."
+#     (state <s> ^operator.name add-attribute
+#                 ^weight <weight>
+#                 ^supplier <sup>)
+#     # FIXME: Replace the underscore with a test that there is no subtotal for this supplier yet
+#     _____
+#     -->
+#     # FIXME: Replace the underscores with code that creates the ^subtotal object described in the README above, with ^value set to 0.
+#     _____}
+
+# STEP 6: Replace the underscores with code that replaces the current total 
+#         with the sum of the total and the addend score 
+#         for each addend that matches the selected attribute.
+# sp {apply*suppliersort-find-subtotal*add-attribute*add-attribute
+#     "Add the selected attribute to the total (will fire for all available suppliers at once)"
+#     (state <s> ^operator <o>
+#                 ^subtotal <t>
+#                 ^supplier <sup>)
+#     (<o> ^name add-attribute
+#         ^attr <attr>)
+#     # Get the current subtotal for a supplier.
+#     (<t> ^supplier <sup>
+#         ^value <tot>)
+#     # FIXME: Get an attribute score from this supplier, the same attribute as selected with the operator.
+#     _____
+#     -->
+#     # FIXME: Replace the subtotal with the sum of the old subtotal and the score value. (Use the + RHS function)
+#     _____
+#     # FIXME: Mark this attribute as having been summed. (Use the ^addends-summed WME as described in the README.)
+#     _____}
+
+
+
+####### STATE: suppliersort-find-subtotal->(other-impasse) #######
+## Catch any further impasse errors under the suppliersort-find-subtotal state
+
+# STEP 3: Catch any further impasse errors under this state
+# FIXME: Replace the underscores with a test that the superstate is the suppliersort-find-subtotal state.
+# sp {elaborate*suppliersort-find-subtotal*error*impasse
+#     "Catch error: Unknown impasse"
+#     (state <s> _____
+#            ^attribute <impasse-attr>
+#            ^impasse <impasse-type>)
+#     -->
+#     (interrupt)
+#     (write |ERROR: Unknown error during subtotal evaluation. (| <impasse-attr> | | <impasse-type> |)| (crlf) (cmd |print --stack|) (crlf))}

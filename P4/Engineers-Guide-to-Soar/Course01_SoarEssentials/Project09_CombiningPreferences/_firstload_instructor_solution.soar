@@ -1,0 +1,61 @@
+### AGENT README ####################################################################
+# AUTHOR: Bryan Stearns
+# DATE: 2024-06-08
+# DESCRIPTION: The Supplier Sorting agent sorts input suppliers according to custom input weights and constraints.
+#
+##  AGENT FILES
+#  _firstload_instructor_solution.soar              # You are here. Load this file to load all the other agent files.
+#  instructor_solution_main.soar                    # Rules that set up main agent processing in the topstate and handle I/O
+#  instructor_solution_tie.soar                     # Rules that respond to a tie impasse among (select-supplier)s by creating preferences among the tied suppliers
+#  suppliersort_find_subtotal.soar                  # Rules that respond to an ONC impasse under (evaluate-weight) by summing scores for attributes of the operator's weight
+#
+##  AGENT LOGIC
+# The agent receives input for a single member's work load at a time.
+# Input is:
+#   * A set of suppliers, each with a set of attributes and corresponding rank scores.
+#   * A set of user-defined weights for each attribute.
+# The agent proposes an operator to select each candidate supplier.
+#   The order in which these are selected determines the order of recommendation.
+#   Initially, these will tie.
+# In the ensuing tie impasse, the agent incrementally determines relative preferences for the tied suppliers, 
+#   using the input attribute weights to guide the prioritization, until the tie is resolved.
+# When all suppliers have been considered, or the output list has reached the configured max length, the agent outputs the sorted list.
+#
+#
+## I/O SCHEMA
+#
+# STRUCTURE                             | CARDINALITY | DESCRIPTION
+# ------------------------------------- | ----------- | -----------------------------
+# input-link:
+#   ^settings ID                        | 0/1 | The ID of the settings object
+#       ^max-output-suppliers INT       | 0/1 | The maximum number of suppliers to output
+#   ^priorities ID                      | 1   | The ID of the priorities object
+#       ^total-cost FLOAT               | 1   | The weight of the total-cost attribute
+#       ^<attribute-name> INT           | 0+  | The weight of the named attribute
+#   ^candidate-supplier ID              | 1+  | The ID of a supplier object that is a candidate for recommendation
+#       ^name STRING                    | 1   | The name of the supplier
+#       ^total-cost FLOAT               | 1   | The total cost for the supplier
+#       ^total-sats INT                 | 0/1 | The total number of satisfactions for the supplier
+#       ^total-score INT                | 1   | The total score for the supplier
+#       ^<attribute-name> INT           | 0+  | The score of the named attribute for this supplier
+#
+# output-link:
+#   ^supplier-list ID                   | 1   | The ID of an object containing the sorted linked-list of suppliers
+#       ^supplier ID                    | 1+  | The ID of a supplier object in the list
+#          ^name STRING                 | 1   | The name of the supplier
+#          ^rank INT                    | 1   | The position of this supplier in the list
+#          ^next ID                     | 0/1 | The next supplier in the list
+#       ^first-supplier ID              | 1   | The ID of the first supplier in the list
+#       ^last-supplier ID               | 1   | The ID of the last supplier in the list
+#       ^count INT                      | 1   | The number of suppliers in the list
+#####################################################################################
+
+# Load the main agent rules.
+load file "instructor_solution_main.soar"
+load file "instructor_solution_tie.soar"
+load file "suppliersort_find_subtotal.soar"
+
+# Load the test input generator rules.
+load file "../fake_agent_input.soar"
+# load file "fake_agent_input_2.soar"   # (Uncomment to use a different test scenario in which some suppliers are true ties.)
+# load file "fake_agent_input_3.soar"   # (Uncomment to use a different test scenario in which all suppliers should be rejected.)

@@ -1,0 +1,27 @@
+## The relevant memory graph schema for the input link and the input that appears there is as follows:
+#   <s> ^io ID
+#           ^input-link ID
+#               ^priorities ID
+#                   ^<attr> INT/FLOAT
+#               ^candidate-supplier ID
+#                   ^name STRING
+##################################################
+
+## These two Soar CLI commands load a Soar file from the parent directory.
+cd ".."
+load file "fake_agent_input.soar"
+
+
+## A rule that prints the name of any candidate supplier that appears on the input link.
+sp {elaborate*suppliersort-main*input*supplier-name
+    "Print any input candidate supplier names"
+    (state <s> ^io.input-link.candidate-supplier.name <sup-name>)
+    -->
+    (write |INPUT: Supplier candidate: | <sup-name> (crlf))}
+
+# A rule that prints the name of any config priority value that appears on the input link.
+sp {elaborate*suppliersort-main*input*config-priorities
+    "Print any input priority weights"
+    (state <s> ^io.input-link.priorities.<attr> <weight>)
+    -->
+    (write |INPUT WEIGHT: | <attr> |: | <weight> (crlf))}

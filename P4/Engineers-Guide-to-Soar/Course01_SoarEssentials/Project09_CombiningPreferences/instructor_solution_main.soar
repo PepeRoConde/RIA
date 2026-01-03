@@ -1,0 +1,184 @@
+### suppliersort-main STATE README ##################################################
+# AUTHOR: Bryan Stearns
+# DATE: 2023-06-02
+# SUBSTATE DEPTH: 1
+# DESCRIPTION: Rules that set up main agent processing in the topstate and handle I/O
+#
+##  OPERATORS
+# (init) + !                        |  Make initial structures and query for the value matrix
+# (select-supplier) +               |  Propose any given input supplier. Preferences will be given in a TIE substate if needed. Pushes the selected supplier to the cached list for output.
+# (output-supplier-list) + <        |  Send the current supplier list to output and reset the agent for more input.
+#
+##  WORKING MEMORY
+# S1  ^name |suppliersort-main|
+#     ^supplier-list ID             | 1   |  A linked-list of ranked suppliers, copied to output once it is fully built
+#         ^supplier ID              | 0+  |  A supplier item in the linked-list
+#         ^first-supplier ID        | 0/1 |  The first supplier in the linked-list
+#         ^last-supplier ID         | 0/1 |  The last supplier in the linked-list
+#         ^count INT                | 1   |  The number of suppliers in the linked-list
+#####################################################################################
+
+
+##############################
+##  OPERATOR: init
+# Initialize the state with main structures we'll use during later processing
+##############################
+
+sp {propose*suppliersort-main*init
+    "Propose to init the state structures"
+    (state <s> ^superstate nil
+              -^supplier-list )
+    -->
+    (<s> ^operator <o> + !) # Use "required" preference to guarantee this is the first operator
+    (<o> ^name init)}
+
+sp {apply*suppliersort-main*init
+    "Name the topstate and initialize the supplier-list structure"
+    (state <s> ^operator.name init)
+    -->
+    # Use the init operator to create main structures we'll need later
+	(<s> ^name suppliersort-main        # The state name
+        ^supplier-list <cr-new>)        # The empty list that we'll output
+    (<cr-new> ^count 0)}                # Initialize the list size to 0
+
+# Extra credit: Remove the output list once there is new input
+sp {apply*suppliersort-main*reset-output
+    "Remove the output list once there is new input"
+    (state <s> ^operator.name init
+            ^io.output-link <ol>)
+    (<ol> ^supplier-list <any>)
+    -->
+    (<ol> ^supplier-list <any> -)}
+
+
+##############################
+##  OPERATOR: select-supplier
+# Propose any given input supplier. Pushes the selected supplier to the cached list for output.
+##  WORKING MEMORY
+# <o> ^name select-supplier
+#     ^supplier ID                      | 1 |  The supplier to add to the list (input-link object)
+##############################
+
+sp {propose*suppliersort-main*select-supplier
+    "Propose any supplier given on the input-link."
+    (state <s> ^io.input-link.candidate-supplier <sup>
+                ^supplier-list <sup-list>)
+    # Check that there is an input supplier that is not yet in the list
+    (<sup> ^name <name>)
+    (<sup-list> -^supplier.name <name>)      # Retract the proposal once this supplier is added to the supplier-list object
+    -->
+    (<s> ^operator <o> +)
+    (<o> ^name select-supplier
+        ^supplier <sup>)}
+
+###  Preference rules for (select-supplier)
+
+sp {prefer*suppliersort-main*select-supplier*total-sats
+    "Prefer suppliers with a higher count of total-sats"
+    (state <s> ^operator <o1> +
+                ^operator <o2> +)
+    (<o1> ^name select-supplier
+        ^supplier <sup1>)
+    (<sup1> ^name <sup1-name>
+        ^total-sats <y1>)
+    (<o2> ^name select-supplier
+        ^supplier <sup2>)
+    (<sup2> ^name <sup2-name>
+        ^total-sats < <y1>)
+    -->
+    (write |Total Satisfieds: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+    (<s> ^operator <o1> > <o2>)}
+
+sp {prefer*suppliersort-main*select-supplier*reject*missing-required-binary
+    "Reject suppliers that have total-sats of 0 (no required attributes)"
+    (state <s> ^operator <o1> +)
+    (<o1> ^name select-supplier
+        ^supplier <sup>)
+    (<sup> ^name <name>
+        ^total-sats 0)             # This supplier does not supply any required data
+    -->
+    (write |Satisfaction Constraint: Prohibit "| <name> |" because it provides no satisfaction attributes. | (crlf))
+    (<s> ^operator <o1> -)}
+
+sp {prefer*suppliersort-main*select-supplier*reject*excess-count
+	"Limit the number of recommended suppliers based on config max-output-suppliers"
+	(state <s> ^operator <o1> +
+				^supplier-list.count >= <max-count>
+				^io.input-link.settings.max-output-suppliers <max-count>)
+	(<o1> ^name select-supplier)
+	-->
+	(<s> ^operator <o1> -)}
+
+###  Apply rules for (select-supplier)
+
+sp {apply*suppliersort-main*select-supplier*create-first
+    "Create the first- and last-supplier symbols with the first selected supplier"
+    (state <s> ^operator <o>
+            ^supplier-list <sup-list>)
+    (<o> ^name select-supplier
+        ^supplier.name <sup-name>)
+    # Check that the list is empty
+    (<sup-list> ^count 0)
+    -->
+    # Add the first supplier to the list
+    (<sup-list> ^supplier <sup-new>)
+    (<sup-new> ^name <sup-name>
+            ^rank 1)
+    # Update the list's count of items
+    (<sup-list> ^count 0 -
+            ^count 1)
+    # Create the first- and last-supplier augmentations
+    (<sup-list> ^first-supplier <sup-new>
+            ^last-supplier <sup-new>)
+	(write |** OUTPUT: First try | <sup-name> (crlf))}
+
+sp {apply*suppliersort-main*select-supplier*append
+    "Append this supplier to the existing list"
+    (state <s> ^operator <o>
+            ^supplier-list <sup-list>)
+    (<o> ^name select-supplier
+        ^supplier.name <sup-name>)
+    # Check that the list is not empty and that the last item is not this new item
+    (<sup-list> ^last-supplier <last>
+            ^count <count>)
+    (<last> ^name <> <sup-name>)
+    -->
+    # Add the supplier to the list
+    (<sup-list> ^supplier <sup-new>)
+    (<sup-new> ^name <sup-name>
+            ^rank (+ 1 <count>))
+    # Update the list's count of items
+    (<sup-list> ^count <count> -
+            ^count (+ 1 <count>))
+    # Update the link to the last supplier in the list
+    (<sup-list> ^last-supplier <last> -
+            ^last-supplier <sup-new>)
+    # Create the link between the old last item and the new item
+    (<last> ^next <sup-new>)
+	(write |** OUTPUT: Then try | <sup-name> (crlf))}
+
+
+##############################
+##  OPERATOR: output-supplier-list
+# When all preferences are made, output the resulting ordered list
+##############################
+
+sp {propose*suppliersort-main*output-supplier-list*list-exists
+    "If the output list exists, propose to output it with worst preference so it is sent after the list is fully curated."
+    (state <s> ^supplier-list <sup-list>)
+    -->
+    (<s> ^operator <o> + <)
+    (<o> ^name output-supplier-list)}
+
+sp {apply*suppliersort-main*output-supplier-list
+    "Output the supplier list and pause the agent"
+    (state <s> ^operator.name output-supplier-list
+        ^supplier-list <sup-list>
+        ^io.output-link <ol>)
+    -->
+    # Output the supplier list
+    (<ol> ^supplier-list <sup-list>)
+    # Reset the agent to be able to receive more input (triggers the (init) operator)
+    (<s> ^supplier-list <sup-list> -)
+    (interrupt)
+	(write |*** DONE ***| (crlf) (crlf))}

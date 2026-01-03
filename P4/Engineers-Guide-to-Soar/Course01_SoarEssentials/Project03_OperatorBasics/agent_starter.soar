@@ -1,0 +1,50 @@
+# This loads another .soar file that has the productions we wrote for the last project.
+load file "existing_code_02.soar"
+
+cd ".."
+load file "fake_agent_input.soar"
+
+
+##############################
+##  OPERATOR: select-supplier
+# Propose any given input supplier. Preference determines recommendation order. Application adds this supplier to the recommendation list.
+##############################
+
+# Propose an operator for each candidate supplier on the input link.
+# The LHS should test that the supplier has not yet been selected so that this proposal retracts once the operator's work is done.
+# The proposed operator should include a link to the candidate supplier that triggered its proposal.
+sp {propose*suppliersort-main*select-supplier
+    "Propose any supplier given on the input-link. Multiple suppliers should tie."
+    (state <s> ^io.input-link.candidate-supplier <sup>)
+    -->
+    # FIXME: Replace the underscores with code that proposes an operator with acceptable preference for this supplier.
+    #   The operator should be given the name "select-supplier" and the augmentation "^supplier <sup>".
+    ____}
+
+# This is a rule that will prefer one supplier operator before another in decreasing order of total-score.
+# sp {prefer*suppliersort-main*select-supplier*alphanumeric
+#     "Prefer suppliers in decreasing order of total-score"
+#     (state <s> ^operator <o1> +
+#                 ^operator <o2> +)
+#     # Test that <o1>'s supplier's total-score is greater than <o2>'s supplier's total-score
+#     (<o1> ^name select-supplier
+#         ^supplier.total-score <sup1-score>)
+#     # FIXME: Replace the underscores with code to test that <o2>'s supplier's total-score is < <sup1-score>.
+#     ____
+#     -->
+#     # Prefer <o1> as better than <o2>
+#     (<s> ^operator <o1> > <o2>)}
+
+# For now, apply the operator by marking that the supplier has been selected 
+# sp {apply*suppliersort-main*select-supplier
+#     "Mark on the state that this supplier has been selected"
+#     # Test the "operator" structure on the state in order to apply that operator when it is selected.
+#     # FIXME: Replace the underscores with code that tests that this is a "select-supplier" operator,
+#     #     and collects the reference to the operator's supplier WME as <sup> (so we can use the <sup-name> and <sup-score> WMEs for the RHS of the rule).
+#     (state <s> ____ ___)
+#     ____
+#     (<sup> ^name <sup-name>
+#           ^total-score <sup-score>)
+#     -->
+#     # Print a message that shows this supplier has been selected (use the supplier's name and total-score in the message)
+#     (write |Selected supplier "| <sup-name> |" (total-score = | <sup-score> |)| (crlf))}

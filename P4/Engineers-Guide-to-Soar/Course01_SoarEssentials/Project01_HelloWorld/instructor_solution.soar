@@ -1,0 +1,9 @@
+# Here is where you write your first Soar rule.
+
+sp {hello*world
+    "Your first Soar rule!"
+    # Use a test that will always be true.
+    (state <s> ^type state)
+    -->
+    # Print "Hello World" to the debugger screen.
+    (write |Hello world!| (crlf))}

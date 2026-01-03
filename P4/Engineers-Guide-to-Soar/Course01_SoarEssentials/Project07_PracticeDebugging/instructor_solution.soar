@@ -1,0 +1,141 @@
+# This imports the solution to Project 06, ONLY for the suppliersort-main state.
+load file "existing_code_06_main.soar"
+
+cd ".."
+load file "fake_agent_input.soar"
+
+
+####### PROBLEM SPACE: suppliersort-tie #######
+
+# (from Project 06) Name the suppliersort-tie state
+sp {elaborate*suppliersort-tie*name
+    (state <s> ^superstate.name suppliersort-main
+            ^impasse tie)
+    -->
+	# (write |** (Figuring out how to sort the suppliers...)| (crlf))
+    (<s> ^name suppliersort-tie)}
+
+# Copy down superstate IDs that we'll use often
+sp {elaborate*suppliersort-tie*priorities
+    "Copy down the Priorities for easy access"
+    (state <s> ^name suppliersort-tie
+                ^superstate.io.input-link.priorities <p>)
+    -->
+    (<s> ^priorities <p>)}
+
+
+
+##############################
+##  OPERATOR: evaluate-weight
+# Iteratively sort through highest-priority attributes in descending order and prefer suppliers with best stats
+##############################
+
+## (If there is more than 1 attribute at a given weight, 
+#   for now just let indifferent preferences pick one randomly (and skip the other). 
+#   We'll address that case properly in Project 08.)
+
+# Propose an (evaluate-weight) operator for every priority attribute:value pair that has not yet been evaluated.
+sp {propose*suppliersort-tie*evaluate-weight
+    "Propose to evaluate a particular config weight level"
+    (state <s> ^name suppliersort-tie
+            ^priorities.<attr> <weight>)
+    (<s> -^weight-evaluated <weight>)    # Test that this weight hasn't been inspected to completion yet
+    -->
+    (<s> ^operator <o> + =)
+    (<o> ^name evaluate-weight
+        ^attribute <attr>
+        ^weight <weight>)}
+
+# Prefer (evaluate-weight) operators in descending order of the weight they will evaluate.
+sp {prefer*suppliersort-tie*evaluate-weight*higher-weight
+    "Evaluate attributes in order of tenant-specified weight priority"
+    (state <s> ^name suppliersort-tie
+            ^operator <o1> +
+            ^operator <o2> +)
+    (<o1> ^name evaluate-weight
+        ^weight <v1>)
+    (<o2> ^name evaluate-weight
+        ^weight < <v1>)
+    -->
+    (<s> ^operator <o1> > <o2>)}
+
+# Apply (evaluate-weight) when total-cost is the attribute at this selected weight (sort in ascending order).
+sp {apply*suppliersort-tie*evaluate-weight*prefer*by-total-cost
+    "For the total-cost attribute: Sort by total-cost in ascending order"
+    (state <s> ^operator <o>
+            ^superstate <ss>
+            ^item <o1> 
+            ^item <o2>)
+    (<o> ^name evaluate-weight
+        ^attribute total-cost)
+    # Test that one item has a better score for total-cost than another
+    (<o1> ^supplier <sup1>)
+    (<o2> ^supplier <sup2>)
+    (<sup1> ^name <sup1-name>
+            ^total-cost <bestval>)
+    (<sup2> ^name <sup2-name>
+            ^total-cost > <bestval>)
+    -->
+    (write |total-cost: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+    (<ss> ^operator <o1> > <o2>)}
+
+# Apply (evaluate-weight) for each non-total-cost attribute at this selected weight (sort in descending order).
+sp {apply*suppliersort-tie*evaluate-weight*prefer*by-value
+    "For non-cost attributes: Sort by value for this weight in descending order"
+    (state <s> ^operator <o>
+            ^superstate <ss>
+            ^item <o1> 
+            ^item <o2>)
+    (<o> ^name evaluate-weight
+        ^attribute {<attr> <> total-cost})
+    # Test that one item has a better score for this attribute than another
+    (<o1> ^supplier <sup1>)
+    (<o2> ^supplier <sup2>)
+    (<sup1> ^name <sup1-name>
+            ^<attr> <bestval>)
+    (<sup2> ^name <sup2-name>
+            ^<attr> < <bestval>)
+    -->
+    (write <attr> |: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+    (<ss> ^operator <o1> > <o2>)}
+
+# For any kind of attribute, create a WME in this state to mark the selected weight as evaluated, so that the (evaluate-weight) proposal will retract.
+sp {apply*suppliersort-tie*evaluate-weight*weight-evaluated
+    "Mark this weight as evaluated so the next weight can be selected and evaluated"
+    (state <s> ^operator <o>)
+    (<o> ^name evaluate-weight
+        ^weight <weight>
+        ^attribute <attr>)
+    -->
+    (write |  * Evaluated weight | <weight> | (attribute "| <attr> |")| (crlf))
+    (<s> ^weight-evaluated <weight>)}
+
+
+
+##############################
+##  OPERATOR: break-attr-tie
+# If two suppliers are still tied after examining priority attributes, sort by overall total-score.
+##############################
+
+sp {propose*suppliersort-tie*break-attr-tie
+    "Use plan-b sorting rules if work remains after the main sorting logic"
+    (state <s> ^name suppliersort-tie)
+    -->
+    (<s> ^operator <o> + <)
+    (<o> ^name break-attr-tie)}
+
+sp {apply*suppliersort-tie*break-attr-tie*prefer-total-score
+    "If we reached this point, prefer by total-score"
+    (state <s> ^operator.name break-attr-tie
+            ^superstate <ss>
+            ^item <o1>
+            ^item <o2>)
+    (<o1> ^supplier <sup1>)
+    (<o2> ^supplier <sup2>)
+    (<sup1> ^name <sup1-name>
+            ^total-score <val1>)
+    (<sup2> ^name <sup2-name>
+            ^total-score < <val1>)
+    -->
+    (write |Total-score: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+    (<ss> ^operator <o1> > <o2>)}

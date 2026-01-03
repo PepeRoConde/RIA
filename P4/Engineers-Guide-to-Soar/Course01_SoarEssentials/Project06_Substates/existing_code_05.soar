@@ -1,0 +1,84 @@
+
+##############################
+##  OPERATOR: select-supplier
+# Propose any given input supplier.
+# Pushes the selected supplier to the cached list for output.
+##############################
+
+sp {propose*suppliersort-main*select-supplier
+    "Propose any supplier given on the input-link."
+    (state <s> ^io.input-link.candidate-supplier <sup>
+                ^supplier-list <sup-list>)
+    (<sup> ^name <name>)
+    (<sup-list> -^supplier.name <name>)       # Retract the proposal once this supplier is added to the supplier-list object
+    -->
+    (<s> ^operator <o> +)
+    (<o> ^name select-supplier
+        ^supplier <sup>)}
+
+sp {apply*suppliersort-main*select-supplier*create-first
+    "Create the first- and last-supplier symbols with the first selected supplier"
+    (state <s> ^operator <o>
+            ^supplier-list <sup-list>)
+    (<o> ^name select-supplier
+        ^supplier.name <sup-name>)
+    (<sup-list> ^count 0)
+    -->
+    # Add the first supplier to the list
+    (<sup-list> ^supplier <sup-new>)
+    (<sup-new> ^name <sup-name>
+            ^rank 1)
+    # Update the list's count of items
+    (<sup-list> ^count 0 -
+            ^count 1)
+    # Create the first- and last-supplier augmentations
+    (<sup-list> ^first-supplier <sup-new>
+            ^last-supplier <sup-new>)
+	(write |** OUTPUT: First try | <sup-name> (crlf))}
+
+sp {apply*suppliersort-main*select-supplier*append
+    "Append this supplier to the existing list"
+    (state <s> ^operator <o>
+            ^supplier-list <sup-list>)
+    (<o> ^name select-supplier
+        ^supplier.name <sup-name>)
+    (<sup-list> ^last-supplier <last>
+            ^count <count>)
+    (<last> ^name <> <sup-name>)
+    -->
+    # Add the supplier to the list
+    (<sup-list> ^supplier <sup-new>)
+    (<sup-new> ^name <sup-name>
+            ^rank (+ 1 <count>))
+    # Update the list's count of items
+    (<sup-list> ^count <count> -
+            ^count (+ 1 <count>))
+    # Update the link to the last supplier in the list
+    (<sup-list> ^last-supplier <last> -
+            ^last-supplier <sup-new>)
+    # Create the link between the old last item and the new item
+    (<last> ^next <sup-new>)
+	(write |** OUTPUT: Then try | <sup-name> (crlf))}
+
+
+##############################
+##  OPERATOR: output-supplier-list
+# When all preferences are made, output the resulting ordered list
+##############################
+
+sp {propose*suppliersort-main*output-supplier-list*list-exists
+    "If the output list exists, propose to output it with worst preference so it is sent after the list is fully curated."
+    (state <s> ^supplier-list <sup-list>)
+    -->
+    (<s> ^operator <o> + <)
+    (<o> ^name output-supplier-list)}
+
+sp {apply*suppliersort-main*output-supplier-list
+    (state <s> ^operator.name output-supplier-list
+        ^supplier-list <sup-list>
+        ^io.output-link <ol>)
+    -->
+    # Send the output
+    (<ol> ^supplier-list <sup-list>)
+    (interrupt)
+	(write |*** DONE ***| (crlf) (crlf))}

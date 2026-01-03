@@ -1,0 +1,38 @@
+# This loads another .soar file that has the productions we wrote for the last project.
+# (Feel free to open this file to reference what we've developed so far.)
+load file "existing_code_02-03.soar"
+
+cd ".."
+load file "fake_agent_input.soar"
+
+
+##############################
+##  OPERATOR: output-suppliers
+# When all suppliers have been sorted, output the results
+##############################
+
+sp {propose*suppliersort-main*output-suppliers
+    "If any potential output exists, propose to output it with worst preference so it only outputs after all suppliers are processed."
+    # FIXME: STEP 1: Replace the underscores with code that tests for any "^selected" WME on the state
+    ____
+    -->
+    # FIXME: STEP 1: Replace the underscores with code that creates an operator named "output-suppliers"
+    # FIXME: STEP 2: Give this operator 1) acceptable, 2) worst, and 3) unary-indifferent preferences
+    ____}
+
+# sp {apply*suppliersort-main*output-suppliers
+#     "Add each selected supplier to output and remove it from the state"
+#     # FIXME: Replace the underscores with code as needed
+#     (state <s> ^io.output-link <ol>
+#             ____
+#             ____)
+#     ____
+#     -->
+#     # 1. Copy a single selected supplier's name to the output-link
+#     ____      # (Use "recommended-supplier" for the attribute name.)
+#     # 2. Remove that supplier WME from the state
+#     ____
+#     # 3. Print that supplier's name
+# 	  (write |* Recommended | <sup-name> (crlf))
+#     # 4. Pause Soar's running
+#     ____}

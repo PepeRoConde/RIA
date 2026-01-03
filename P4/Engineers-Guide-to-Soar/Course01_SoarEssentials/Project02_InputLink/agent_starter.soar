@@ -1,0 +1,35 @@
+## The relevant memory graph schema for the input link and the input that appears there is as follows:
+#   <s> ^io ID
+#           ^input-link ID
+#               ^priorities ID
+#                   ^<attr> INT/FLOAT
+#               ^candidate-supplier ID
+#                   ^name STRING
+##################################################
+
+## These two Soar CLI commands load a Soar file from the parent directory.
+cd ".."
+load file "fake_agent_input.soar"
+
+## A rule that prints the name of any candidate supplier that appears on the input link.
+# sp {elaborate*suppliersort-main*input*supplier-name
+#     "Anything inside these quotes is a documentation string for this rule. 
+#     Replace this text with a description of what this rule does."
+#     # FIXME: Replace the underscores with the correct WM path to access the supplier name
+#     (state <s> ^___ <sup-name>)
+#     -->
+#     # FIXME: Replace the underscores with code so that this rule 
+#     #  will print the supplier name that matched on the left-hand side of this rule,
+#     #  as well as a newline at the end of the message.
+#     # (Generate a newline using the (crlf) RHS function.)
+#     (write |INPUT: Supplier candidate: | ___ ___)}
+
+## A rule that prints the name of any config priority value that appears on the input link.
+# sp {elaborate*suppliersort-main*input*config-priorities
+#     "(write documentation here)"
+#     # FIXME: Try writing the entire LHS from scratch! :)
+#     # Be sure that your conditions define <attr> and <val> so they can be used on the RHS of this rule.
+#     # (Remember that <variables> can stand in for either attributes or values.)
+# 
+#     -->
+#     (write |INPUT WEIGHT: | <attr> |: | <weight> (crlf))}

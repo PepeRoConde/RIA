@@ -1,0 +1,111 @@
+# This imports the solution to Project 06, ONLY for the suppliersort-main state.
+load file "existing_code_06_main.soar"
+
+cd ".."
+load file "fake_agent_input.soar"
+
+
+####### PROBLEM SPACE: suppliersort-tie #######
+
+# (from Project 06) Name the suppliersort-tie state
+sp {elaborate*suppliersort-tie*name
+    (state <s> ^superstate.name suppliersort-main
+            ^impasse tie)
+    -->
+    # (write |** (Figuring out how to sort the suppliers...)| (crlf))
+    (<s> ^name suppliersort-tie)}
+
+# STEP 1: Copy down superstate IDs that we'll use often
+# FIXME: Write an elaboration rule here that copies the "priorities" WME from the input link to this state for quick access
+
+
+
+##############################
+##  OPERATOR: evaluate-weight
+# Iteratively sort through highest-priority attributes in descending order and prefer suppliers with best stats
+##############################
+
+# STEP 2: Propose an (evaluate-weight) operator for every priority weight that has not yet been evaluated.
+# FIXME: Write a single proposal rule here that proposes this operator with indifferent preference.
+#        To test that a weight has not yet been evaluated, test that a (<s> ^weight-evaluated <weight>) WME is missing.
+#        (This WME will be created by an apply rule we'll write in STEP 6.)
+#        On the RHS, you will want to copy both the attribute and the weight value from the priorites object to 
+#        the operator you propose so that other rules can tell which priority this operator corresponds with.
+## (If there is more than 1 attribute at a given weight, 
+#   for now just let indifferent preferences pick one randomly. 
+#   We'll address that case properly in Project 08.)
+
+
+# STEP 4: Prefer (evaluate-weight) operators in descending order of the weight they will evaluate.
+# FIXME: Write a single preference rule here that creates this preference for each pair of proposed (evaluate-weight) operators.
+#        It should prefer operators with higher weight over operators with lower weight.
+#        (You need your (evaluate-weight) proposal rule to attach the corresponding weight value to the operator when proposing it so that you can compare the weight here.)
+
+
+# STEP 5: Apply (evaluate-weight) when total-cost is the attribute at this selected weight (sort in ascending order).
+# FIXME: Write an apply rule here for (evaluate-weight) that, when total-cost is the attribute at this selected weight, returns a preference to 
+#        the superstate for each pair of tied items that have different values for total-cost.
+#        Prefer items with higher scores for this attribute as better than items with lower scores.
+#        (Reference the name of each supplier as <sup1-name> and <sup2-name>, respectively, to supply the provided RHS (write) arguments.)
+# sp {apply*suppliersort-tie*evaluate-weight*prefer*by-total-cost
+#     "For the total-cost attribute: Sort by total-cost in ascending order"
+#     ____
+#     -->
+#     (write |total-cost: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+#     ____}
+
+
+# STEP 7: Apply (evaluate-weight) for each non-total-cost attribute at this selected weight (sort in descending order).
+# FIXME: Write an apply rule here for (evaluate-weight) that returns a preference to 
+#        the superstate for each pair of tied items that have different scores for this selected attribute.
+#        Prefer items with higher scores for this attribute as better than items with lower scores.
+#        (Reference the name of each supplier as <sup1-name> and <sup2-name>, respectively, to supply the provided RHS (write) arguments.)
+# sp {apply*suppliersort-tie*evaluate-weight*prefer*by-value
+#     "For non-cost attributes: Sort by value for this weight in descending order"
+#     ____
+#     -->
+#     (write <attr> |: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+#     ____}
+
+
+# STEP 6: For any kind of attribute, create a WME in this state to mark the selected weight as evaluated, so that the (evaluate-weight) proposal will retract.
+# FIXME: Write an apply rule here for (evaluate-weight) that creates a (<s> ^weight-evaluated <weight>) WME. This will fire in parallel with the other apply rules.
+#        (Make sure your proposal rule for this operator only proposes an operator for a weight if this ^weight-evaluated WME does not yet exist for that weight.)
+# sp {apply*suppliersort-tie*evaluate-weight*weight-evaluated
+#     "Mark this weight as evaluated so the next weight can be selected and evaluated"
+#     ____
+#     -->
+#     (write |  * Evaluated weight | <weight> | (attribute "| <attr> |")| (crlf))
+#     ____}
+
+
+
+##############################
+##  OPERATOR: break-attr-tie
+# If two suppliers are still tied after examining priority attributes, sort by overall total-score.
+##############################
+
+# STEP 3: Change the (break-attr-tie) unary preference to that it does not conflict with (evaluate-weight)
+sp {propose*suppliersort-tie*break-attr-tie
+    "Use plan-b sorting rules if work remains after the main sorting logic"
+    (state <s> ^name suppliersort-tie)
+    -->
+    # FIXME: Give this operator worst preference, so that it is only selected after all (evaluate-weight) operators are complete.
+    (<s> ^operator <o> + )
+    (<o> ^name break-attr-tie)}
+
+sp {apply*suppliersort-tie*break-attr-tie*prefer-total-score
+    "If we reached this point, prefer by total-score"
+    (state <s> ^operator.name break-attr-tie
+            ^superstate <ss>
+            ^item <o1>
+            ^item <o2>)
+    (<o1> ^supplier <sup1>)
+    (<o2> ^supplier <sup2>)
+    (<sup1> ^name <sup1-name>
+            ^total-score <val1>)
+    (<sup2> ^name <sup2-name>
+            ^total-score < <val1>)
+    -->
+    (write |Total-score: Prefer | <sup1-name> | > | <sup2-name> (crlf))
+    (<ss> ^operator <o1> > <o2>)}
